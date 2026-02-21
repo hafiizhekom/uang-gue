@@ -1,0 +1,400 @@
+openapi: 3.0.0
+info:
+  title: Financial Tracker API
+  description: API Dashboard Keuangan dengan sistem Accounting Period & Hybrid Outcome.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8000/api
+    description: Laravel Sail Server
+
+components:
+  securitySchemes:
+    sanctumAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # --- Base Master Schema ---
+    MasterResource:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+          nullable: false
+        name:
+          type: string
+          example: "Gaji/Active Income"
+          nullable: false
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-01-01T00:00:00Z"
+          nullable: false
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-01-01T00:00:00Z"
+          nullable: false
+
+    # --- Master Period with Stats ---
+    MasterPeriod:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Januari 2024"
+        start_date:
+          type: string
+          format: date
+          example: "2024-01-01"
+        end_date:
+          type: string
+          format: date
+          example: "2024-01-31"
+        stats:
+          type: object
+          properties:
+            total_income:
+              type: number
+              example: 15000000
+            total_outcome:
+              type: number
+              example: 8500000
+            balance:
+              type: number
+              example: 6500000
+
+    # --- Transaction Schemas ---
+    Income:
+      type: object
+      properties:
+        id: { type: integer, example: 10 }
+        title: { type: string, example: "Gaji Bulanan" }
+        amount: { type: number, example: 10000000 }
+        date: { type: string, format: date, example: "2024-01-25" }
+        type: { $ref: '#/components/schemas/MasterResource' }
+
+    Outcome:
+      type: object
+      properties:
+        id: { type: integer, example: 50 }
+        title: { type: string, example: "Belanja Mingguan" }
+        amount: { type: number, example: 550000 }
+        date: { type: string, format: date, example: "2024-01-26" }
+        has_detail: { type: boolean, example: true }
+        category: { $ref: '#/components/schemas/MasterResource' }
+        details:
+          type: array
+          items: 
+            type: object
+            properties:
+              id: { type: integer, example: 1 }
+              title: { type: string, example: "Beras 5kg" }
+              amount: { type: number, example: 75000 }
+              payment: { $ref: '#/components/schemas/MasterResource' }
+              tags: { type: array, items: { $ref: '#/components/schemas/MasterResource' } }
+
+    # --- Pagination ---
+    CursorPagination:
+      type: object
+      properties:
+        data: { type: array, items: { type: object } }
+        meta:
+          type: object
+          properties:
+            next_cursor: { type: string, nullable: true, example: "eyJpZCI6MTB9" }
+            path: { type: string, example: "http://localhost/api/outcomes" }
+
+security:
+  - sanctumAuth: []
+
+paths:
+  # === MASTER PERIODS ===
+  /masters/periods:
+    get:
+      tags: [Master Period]
+      summary: List periods with financial stats
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              example:
+                data: [{ id: 1, name: "Januari 2024", start_date: "2024-01-01", end_date: "2024-01-31", stats: { total_income: 10000000, total_outcome: 5000000, balance: 5000000 } }]
+
+  # === ALL OTHER MASTERS ===
+  /masters/income-types:
+    get:
+      tags: [Masters]
+      summary: Get all income types (Gaji, Side Hustle, etc)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:  # ← Ini yang kurang!
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MasterResource'
+              example:
+                data:
+                  - id: 1
+                    name: "Gaji/Salary"
+                  - id: 2
+                    name: "Revenue"
+                  - id: 3
+                    name: "Pinjaman"
+
+  /masters/outcome-categories:
+    get:
+      tags: [Masters]
+      summary: Get all outcome categories (Makan, Transport, etc)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              example:
+                data:
+                  - id: 1
+                    name: "Makanan & Minuman"
+                  - id: 2
+                    name: "Transportasi"
+                  - id: 3
+                    name: "Biaya Hidup"
+                  - id: 4
+                    name: "Kendaraan"
+                  - id: 5
+                    name: "Rumah & Renovasi"
+                  - id: 6
+                    name: "Hutang & Piutang"
+                  - id: 7
+                    name: "Rokok"
+                  - id: 8
+                    name: "Donasi"
+                  - id: 9
+                    name: "Kebutuhan Anak"
+                  - id: 10
+                    name: "Lainnya"
+
+  /masters/outcome-payments:
+    get:
+      tags: [Masters]
+      summary: Get all payment methods (Cash, Debit, CC, E-Wallet)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              example:
+                data:
+                  - id: 1
+                    name: "Cash"
+                  - id: 2
+                    name: "BCA"
+                  - id: 3
+                    name: "Mandiri"
+                  - id: 4
+                    name: "Blu BCA"
+                  - id: 5
+                    name: "GoPay"
+                  - id: 6
+                    name: "DANA"
+                  - id: 7
+                    name: "OVO"
+                  - id: 8
+                    name: "ShopeePay"
+                  - id: 9
+                    name: "Tokopedia Saldo"
+
+  /masters/outcome-tags:
+    get:
+      tags: [Masters]
+      summary: Get all tags (Urgent, Wishlist, Bulanan)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              example:
+                data:
+                  - id: 1
+                    name: "Jajan Saya"
+                  - id: 2
+                    name: "Jajan Istri"
+                  - id: 3
+                    name: "Jajan Anak"
+                  - id: 4
+                    name: "Pure Kebutuhan"
+                  - id: 5
+                    name: "Air"
+                  - id: 6
+                    name: "Makan Diluar"
+
+  /masters/outcome-hutang:
+    get:
+      tags: [Masters]
+      summary: Get list of debts/creditors
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              example:
+                data:
+                  - id: 1
+                    name: "Pinjaman"
+                  - id: 2
+                    name: "Paylater"
+                  - id: 3
+                    name: "Cicilan"
+
+  # === TRANSACTIONS ===
+  /incomes:
+    get:
+      tags: [Income]
+      parameters:
+        - name: master_period_id
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: List of incomes for specific period
+          content:
+            application/json:
+              example:
+                data:
+                  - id: 1
+                    master_period_id: 1
+                    title: "Gaji Jan"
+                    amount: 10000000
+                    date: "2024-01-25"
+                    type:
+                      id: 1
+                      name: "Gaji Tetap"  
+    post:
+      tags: [Income]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [master_period_id, master_income_type_id, title, amount, date]
+              properties:
+                master_period_id: { type: integer }
+                master_income_type_id: { type: integer }
+                title: { type: string }
+                amount: { type: number }
+                date: { type: string, format: date }
+
+  /outcomes:
+    get:
+      tags: [Outcome]
+      parameters:
+        - name: master_period_id
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: List of outcomes with nested details
+          content:
+            application/json:
+              example:
+                Outcome:
+                  data: [{ id: 1, period: 1, title: "Makan Siang", amount: 50000, date: "2024-01-26", category: { id: 1, name: "Makan" }, has_detail: true }]
+    post:
+      tags: [Outcome]
+      summary: Hybrid Create Outcome (With or Without Bulk Details)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [master_period_id, title, date, master_outcome_category_id]
+              properties:
+                master_period_id: { type: integer }
+                master_outcome_category_id: { type: integer }
+                title: { type: string }
+                date: { type: string, format: date }
+                has_detail: { type: boolean }
+                amount: { type: number }
+                details:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      title: { type: string }
+                      amount: { type: number }
+                      master_outcome_payment_id: { type: integer }
+                      tag_ids: { type: array, items: { type: integer } }
+
+  # === GRANULAR DETAILS ===
+  /outcome-details:
+    get:
+        tags: [Outcome Detail]
+        summary: Get details for a specific outcome header
+        parameters:
+          - name: outcome_id
+            in: query
+            required: true # Wajib ada biar nggak narik semua detail sedunia
+            schema: { type: integer }
+        responses:
+          '200':
+            description: List of items for the selected outcome
+            content:
+              application/json:
+                example:
+                  data:
+                    - id: 101
+                      title: "Beras Rojo Lele"
+                      amount: 85000
+                      payment: { id: 1, name: "BCA" }
+                    - id: 102
+                      title: "Minyak Goreng"
+                      amount: 35000
+                      payment: { id: 1, name: "BCA" }
+    post:
+      tags: [Outcome Detail]
+      summary: Add single item to existing outcome
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [outcome_id, title, amount, master_outcome_payment_id]
+              properties:
+                outcome_id: { type: integer }
+                title: { type: string }
+                amount: { type: number }
+                master_outcome_payment_id: { type: integer }
+                tag_ids: { type: array, items: { type: integer } }
+
+  /outcome-details/{id}:
+    put:
+      tags: [Outcome Detail]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+                amount: { type: number }
+    delete:
+      tags: [Outcome Detail]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200':
+          description: Deleted
