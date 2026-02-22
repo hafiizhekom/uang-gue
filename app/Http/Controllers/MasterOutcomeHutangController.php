@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Master\StoreUpdateOutcomeHutangRequest;
 use App\Models\MasterOutcomeHutang;
 use Illuminate\Http\Request;
 use App\Http\Resources\MasterResource;
@@ -14,26 +15,25 @@ class MasterOutcomeHutangController extends Controller
     public function index()
     {
         //
-        return MasterResource::collection(
+        $collection = MasterResource::collection(
             MasterOutcomeHutang::query()
             ->where('user_id', auth()->id())
             ->withCount('outcomes')
             ->latest()
             ->cursorPaginate(10)
         );
+
+        return $this->data($collection);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreUpdateOutcomeHutangRequest $request)
     {
         //
-        $data = MasterOutcomeHutang::create($request->validate(['name' => 'required|string']));
-        return response()->json([
-            'message' => 'Outcome Hutang created successfully',
-            'data'    => new MasterResource($data)
-        ], 201);
+        $data = MasterOutcomeHutang::create($request->validated());
+        return $this->success(new MasterResource($data), 'Outcome Hutang created successfully', 201);
     }
 
     /**
@@ -48,14 +48,11 @@ class MasterOutcomeHutangController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, MasterOutcomeHutang $masterOutcomeHutang)
+    public function update(StoreUpdateOutcomeHutangRequest $request, MasterOutcomeHutang $masterOutcomeHutang)
     {
         //
-        $masterOutcomeHutang->update($request->validate(['name' => 'required|string']));
-        return response()->json([
-            'message' => 'Outcome Hutang updated successfully',
-            'data'    => new MasterResource($masterOutcomeHutang)
-        ], 200);
+        $masterOutcomeHutang->update($request->validated());
+        return $this->success(new MasterResource($masterOutcomeHutang), 'Outcome Hutang updated successfully', 200);
     }
 
     /**
@@ -65,8 +62,6 @@ class MasterOutcomeHutangController extends Controller
     {
         //
         $masterOutcomeHutang->delete();
-        return response()->json([
-            'message' => 'Outcome Hutang deleted successfully'
-        ], 200);
+        return $this->success(null, 'Outcome Hutang deleted successfully', 200);
     }
 }

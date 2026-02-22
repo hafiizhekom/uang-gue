@@ -16,6 +16,7 @@ class MasterOutcomeHutang extends Model
     protected $table = 'master_outcome_hutangs';
 
     protected $fillable = [
+        'user_id',
         'name',
         'slug',
     ];

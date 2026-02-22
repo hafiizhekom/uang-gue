@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Master;
 
 use Illuminate\Foundation\Http\FormRequest;
-
 class StoreUpdatePeriodRequest extends FormRequest
 {
     /**
@@ -11,7 +10,12 @@ class StoreUpdatePeriodRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return auth()->check();
+    }
+
+    protected function prepareForValidation()
+    {
+        $this->merge(['user_id' => auth()->id()]);
     }
 
     /**
@@ -21,8 +25,29 @@ class StoreUpdatePeriodRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            //
+
+        $id = $this->route('master_income_type');
+        $rules = [
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+            'start_date' => [
+                'required',
+                'date',
+            ],
+            'end_date' => [
+                'required',
+                'date',
+                'after_or_equal:start_date',
+            ],
         ];
+
+        if (!$id) {
+            $rules['user_id'] = 'required|exists:users,id';
+        }
+
+        return $rules;
     }
 }

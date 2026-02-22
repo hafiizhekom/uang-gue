@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Master;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreUpdateOutcomePaymentRequest extends FormRequest
 {
@@ -43,10 +44,6 @@ class StoreUpdateOutcomePaymentRequest extends FormRequest
                 'required',
                 'string',
                 'max:255'
-            ],
-            'description' => [
-                'nullable',
-                'string',
             ],
         ];
 

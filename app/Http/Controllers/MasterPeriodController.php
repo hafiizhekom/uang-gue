@@ -2,44 +2,49 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Master\StoreUpdatePeriodRequest;
 use App\Http\Resources\MasterPeriodResource;
 use App\Models\MasterPeriod;
-use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use App\Http\Controllers\Controller;
 
-class MasterPeriodController extends Controller
+class MasterPeriodController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            // Pake Policy buat method tertentu
+            new Middleware('can:view,master_period', only: ['show']),
+            new Middleware('can:update,master_period', only: ['update']),
+            new Middleware('can:delete,master_period', only: ['destroy']),
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
         //
-        return MasterPeriodResource::collection(
+        $collection = MasterPeriodResource::collection(
             MasterPeriod::query()
             ->where('user_id', auth()->id())
             ->withCount(['outcomes', 'incomes'])
             ->latest()
             ->cursorPaginate(10)
         );
+
+        return $this->data($collection);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreUpdatePeriodRequest $request)
     {
-        //
-        $val = $request->validate([
-            'name' => 'required',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after:start_date',
-        ]);
-        $val['user_id'] = auth()->id();
-        return response()->json([
-            'message' => 'Period created successfully',
-            'data'    => new MasterPeriodResource(MasterPeriod::create($val))
-        ], 201);
+        $data = MasterPeriod::create($request->validated());
+        return $this->success(new MasterPeriodResource($data), 'Period created successfully', 201);
     }
 
     /**
@@ -48,14 +53,17 @@ class MasterPeriodController extends Controller
     public function show(MasterPeriod $masterPeriod)
     {
         //
+        return $this->data(new MasterPeriodResource($masterPeriod));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, MasterPeriod $masterPeriod)
+    public function update(StoreUpdatePeriodRequest $request, MasterPeriod $masterPeriod)
     {
         //
+        $masterPeriod->update($request->validated());
+        return $this->success(new MasterPeriodResource($masterPeriod), 'Period updated successfully', 200);
     }
 
     /**
@@ -64,5 +72,7 @@ class MasterPeriodController extends Controller
     public function destroy(MasterPeriod $masterPeriod)
     {
         //
+        $masterPeriod->delete();
+        return $this->success(null, 'Period deleted successfully', 200);
     }
 }

@@ -17,6 +17,7 @@ class MasterOutcomePayment extends Model
     protected $table = 'master_outcome_payments';
 
     protected $fillable = [
+        'user_id',
         'name',
         'slug',
     ];

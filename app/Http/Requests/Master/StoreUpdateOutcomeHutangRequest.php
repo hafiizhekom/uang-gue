@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Master;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreUpdateOutcomeHutangRequest extends FormRequest
 {
@@ -43,10 +44,6 @@ class StoreUpdateOutcomeHutangRequest extends FormRequest
                 'required',
                 'string',
                 'max:255'
-            ],
-            'description' => [
-                'nullable',
-                'string',
             ],
         ];
 

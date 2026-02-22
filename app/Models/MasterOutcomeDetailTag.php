@@ -13,7 +13,11 @@ class MasterOutcomeDetailTag extends Model
     /** @use HasFactory<\Database\Factories\MasterOutcomeDetailTagFactory> */
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['name', 'slug'];
+    protected $fillable = [
+        'user_id',
+        'name', 
+        'slug'
+    ];
 
     public function outcome_details() {
         return $this->belongsToMany(OutcomeDetail::class, 'outcome_detail_tag');

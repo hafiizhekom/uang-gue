@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Master\StoreUpdateOutcomePaymentRequest;
 use App\Models\MasterOutcomePayment;
 use Illuminate\Http\Request;
 use App\Http\Resources\MasterResource;
@@ -14,26 +15,24 @@ class MasterOutcomePaymentController extends Controller
     public function index()
     {
         //
-        return MasterResource::collection(
+        $collection = MasterResource::collection(
             MasterOutcomePayment::query()
             ->where('user_id', auth()->id())
             ->withCount('outcomes')
             ->latest()
             ->cursorPaginate(10)
         );
+        return $this->data($collection);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreUpdateOutcomePaymentRequest $request)
     {
         //
-        $data = MasterOutcomePayment::create($request->validate(['name' => 'required|string']));
-        return response()->json([
-            'message' => 'Outcome Payment created successfully',
-            'data'    => new MasterResource($data)
-        ], 201);
+        $data = MasterOutcomePayment::create($request->validated());
+        return $this->success(new MasterResource($data), 'Outcome Payment created successfully', 201);
     }
 
     /**
@@ -51,11 +50,8 @@ class MasterOutcomePaymentController extends Controller
     public function update(Request $request, MasterOutcomePayment $masterOutcomePayment)
     {
         //
-        $masterOutcomePayment->update($request->validate(['name' => 'required|string']));
-        return response()->json([
-            'message' => 'Outcome Payment updated successfully',
-            'data'    => new MasterResource($masterOutcomePayment)
-        ], 200);
+        $masterOutcomePayment->update($request->validated());
+        return $this->success(new MasterResource($masterOutcomePayment), 'Outcome Payment updated successfully', 200);
     }
 
     /**
@@ -65,8 +61,6 @@ class MasterOutcomePaymentController extends Controller
     {
         //
         $masterOutcomePayment->delete();
-        return response()->json([
-            'message' => 'Outcome Payment deleted successfully'
-        ], 200);
+        return $this->success(null, 'Outcome Payment deleted successfully');
     }
 }

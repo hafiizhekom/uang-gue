@@ -15,7 +15,12 @@ class MasterPeriod extends Model
     /** @use HasFactory<\Database\Factories\MasterPeriodFactory> */
 
     use HasFactory, SoftDeletes;
-    protected $fillable = ['user_id', 'name', 'start_date', 'end_date', 'is_closed'];
+    protected $fillable = [
+        'user_id', 
+        'name', 
+        'start_date', 
+        'end_date'
+    ];
 
     public function incomes() { 
         return $this->hasMany(Income::class); 

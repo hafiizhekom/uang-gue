@@ -19,8 +19,8 @@ class IncomeResource extends JsonResource
             'date' => $this->date,
             'title' => $this->title,
             'amount' => (float) $this->amount,
-            'type' => $this->type?->name, // Relasi ke MasterIncomeType
-            'note' => $this->note,
+            'type' => $this->incomeType->name, // Relasi ke MasterIncomeType
+            'note' => $this->note
         ];
     }
 }

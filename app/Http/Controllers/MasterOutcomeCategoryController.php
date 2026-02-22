@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Master\StoreUpdateOutcomeCategoryRequest;
 use App\Http\Resources\MasterResource;
 use App\Models\MasterOutcomeCategory;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Routing\Controllers\HasMiddleware;
 
 class MasterOutcomeCategoryController extends Controller implements HasMiddleware
@@ -42,10 +44,10 @@ class MasterOutcomeCategoryController extends Controller implements HasMiddlewar
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreUpdateOutcomeCategoryRequest $request)
     {
         //
-        $data = MasterOutcomeCategory::create($request->validate(['name' => 'required|string', 'user_id' => 'required|exists:users,id']));
+        $data = MasterOutcomeCategory::create($request->validated());
         return $this->success(new MasterResource($data), 'Outcome Category created successfully', 201);
     }
 
@@ -61,10 +63,10 @@ class MasterOutcomeCategoryController extends Controller implements HasMiddlewar
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, MasterOutcomeCategory $masterOutcomeCategory)
+    public function update(StoreUpdateOutcomeCategoryRequest $request, MasterOutcomeCategory $masterOutcomeCategory)
     {
         //
-        $masterOutcomeCategory->update($request->validate(['name' => 'required|string']));
+        $masterOutcomeCategory->update($request->validated());
         return $this->success(new MasterResource($masterOutcomeCategory), 'Outcome Category updated successfully');
     }
 

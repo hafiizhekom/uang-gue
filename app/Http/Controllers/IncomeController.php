@@ -2,27 +2,40 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
+use App\Http\Requests\IndexIncomeRequest;
+use App\Http\Resources\IncomeResource;
 use App\Models\Income;
 use Illuminate\Http\Request;
-use App\Http\Resources\IncomeResource;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class IncomeController extends Controller
+class IncomeController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            // Pake Policy buat method tertentu
+            new Middleware('can:view,income', only: ['show']),
+            new Middleware('can:update,income', only: ['update']),
+            new Middleware('can:delete,income', only: ['destroy']),
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index(IndexIncomeRequest $request)
     {
         //
-        $request->validate([
-            'master_period_id' => 'required|exists:master_periods,id',
-        ]);
+        $incomes = Income::query()
+        ->where('user_id', auth()->id())
+        ->where('master_period_id', $request->master_period_id)
+        ->with('type')
+        ->latest('date')
+        ->get();
 
-        return IncomeResource::collection(
-            Income::query()->where('user_id', auth()->id())
-                ->where('master_period_id', $request->master_period_id)
-                ->with('type')->latest()->cursorPaginate(15)
-        );
+        return IncomeResource::collection($incomes);
     }
 
     /**

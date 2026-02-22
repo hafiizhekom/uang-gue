@@ -16,6 +16,7 @@ class MasterOutcomeCategory extends Model
     protected $table = 'master_outcome_categories';
 
     protected $fillable = [
+        'user_id',
         'name',
         'slug',
     ];

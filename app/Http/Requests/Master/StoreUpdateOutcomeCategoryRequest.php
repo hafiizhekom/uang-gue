@@ -45,11 +45,7 @@ class StoreUpdateOutcomeCategoryRequest extends FormRequest
                 'required',
                 'string',
                 'max:255'
-            ],
-            'description' => [
-                'nullable',
-                'string',
-            ],
+            ]
         ];
 
         if (!$id) {
