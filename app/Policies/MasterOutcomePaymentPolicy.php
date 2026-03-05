@@ -2,11 +2,11 @@
 
 namespace App\Policies;
 
-use App\Models\MasterOutcomePayment;
+use App\Models\MasterPayment;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
 
-class MasterOutcomePaymentPolicy
+class MasterPaymentPolicy
 {
     /**
      * Determine whether the user can view any models.
@@ -19,9 +19,9 @@ class MasterOutcomePaymentPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, MasterOutcomePayment $masterOutcomePayment): bool
+    public function view(User $user, MasterPayment $masterPayment): bool
     {
-        return $user->id === $masterOutcomePayment->user_id;
+        return $user->id === $masterPayment->user_id;
     }
 
     /**
@@ -35,23 +35,23 @@ class MasterOutcomePaymentPolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, MasterOutcomePayment $masterOutcomePayment): bool
+    public function update(User $user, MasterPayment $masterPayment): bool
     {
-        return $user->id === $masterOutcomePayment->user_id;
+        return $user->id === $masterPayment->user_id;
     }
 
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, MasterOutcomePayment $masterOutcomePayment): bool
+    public function delete(User $user, MasterPayment $masterPayment): bool
     {
-        return $user->id === $masterOutcomePayment->user_id;
+        return $user->id === $masterPayment->user_id;
     }
 
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, MasterOutcomePayment $masterOutcomePayment): bool
+    public function restore(User $user, MasterPayment $masterPayment): bool
     {
         return false;
     }
@@ -59,7 +59,7 @@ class MasterOutcomePaymentPolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, MasterOutcomePayment $masterOutcomePayment): bool
+    public function forceDelete(User $user, MasterPayment $masterPayment): bool
     {
         return false;
     }

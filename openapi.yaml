@@ -240,10 +240,10 @@ paths:
                   - id: 6
                     name: "Makan Diluar"
 
-  /masters/outcome-hutang:
+  /masters/outcome-type:
     get:
       tags: [Masters]
-      summary: Get list of debts/creditors
+      summary: Get list of types (Pinjaman, Paylater, Cicilan)
       responses:
         '200':
           description: OK
@@ -336,7 +336,7 @@ paths:
                     properties:
                       title: { type: string }
                       amount: { type: number }
-                      master_outcome_payment_id: { type: integer }
+                      master_payment_id: { type: integer }
                       tag_ids: { type: array, items: { type: integer } }
 
   # === GRANULAR DETAILS ===
@@ -372,12 +372,12 @@ paths:
           application/json:
             schema:
               type: object
-              required: [outcome_id, title, amount, master_outcome_payment_id]
+              required: [outcome_id, title, amount, master_payment_id]
               properties:
                 outcome_id: { type: integer }
                 title: { type: string }
                 amount: { type: number }
-                master_outcome_payment_id: { type: integer }
+                master_payment_id: { type: integer }
                 tag_ids: { type: array, items: { type: integer } }
 
   /outcome-details/{id}:

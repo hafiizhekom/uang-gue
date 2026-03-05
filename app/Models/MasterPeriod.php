@@ -33,4 +33,19 @@ class MasterPeriod extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    protected static function booted()
+    {
+        static::deleting(function ($model) {
+            if (!$model->isForceDeleting()) {
+                $model->incomes()->delete();
+                $model->outcomes()->delete();
+            }
+        });
+
+        static::restoring(function ($model) {
+            $model->incomes()->withTrashed()->restore();
+            $model->outcomes()->withTrashed()->restore();
+        });
+    }
 }

@@ -5,7 +5,7 @@ namespace App\Http\Requests\Master;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StoreUpdateOutcomePaymentRequest extends FormRequest
+class StoreUpdateOutcomeTypeRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -17,7 +17,7 @@ class StoreUpdateOutcomePaymentRequest extends FormRequest
 
     public function prepareForValidation()
     {
-        $id = $this->route('master_outcome_payment');
+        $id = $this->route('master_outcome_type');
         if (!$id) {
             $this->merge([
                 'user_id' => auth()->id(),
@@ -36,7 +36,7 @@ class StoreUpdateOutcomePaymentRequest extends FormRequest
     public function rules(): array
     {
 
-        $id = $this->route('master_outcome_payment');
+        $id = $this->route('master_outcome_type');
         $rules = [
             //
             'user_id' => 'required|exists:users,id',
@@ -53,7 +53,7 @@ class StoreUpdateOutcomePaymentRequest extends FormRequest
                 'string',
                 'alpha_dash',
                 'max:255',
-                Rule::unique('master_outcome_payments')->where('user_id', auth()->id())
+                Rule::unique('master_outcome_types')->where('user_id', auth()->id())
             ];
         }
 

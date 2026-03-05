@@ -2,8 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Models\MasterOutcomePayment;
-use App\Models\Outcome;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -22,7 +20,6 @@ class OutcomeDetailFactory extends Factory
             'date' => fake()->date(),
             'title' => fake()->words(2, true),
             'amount' => fake()->numberBetween(10000, 500000),
-            'master_outcome_payment_id' => MasterOutcomePayment::inRandomOrder()->first()->id,
             'note' => fake()->optional()->sentence(),
         ];
     }

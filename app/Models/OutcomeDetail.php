@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Models\MasterOutcomeDetailTag;
+use App\Models\MasterPayment;
+use App\Models\Outcome;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -14,31 +17,37 @@ class OutcomeDetail extends Model
     protected $casts = [
         'amount' => 'float',
         'outcome_id' => 'int',
-        'master_outcome_payment_id' => 'int',
+        'master_payment_id' => 'int',
         'date' => 'date',
-        'tags' => 'array' // Supaya otomatis jadi JSON di DB & Array di Laravel/Next.js
+        'note' => 'string',
     ];
 
     protected $fillable = [
         'outcome_id', 'date', 'title', 'amount', 
-        'master_outcome_payment_id', 'note', 'tags'
+        'master_payment_id', 'note', 'tags'
     ];
-
-    protected static function booted() {
-        static::saved(function ($detail) {
-            $detail->outcome->update(['amount' => $detail->outcome->details()->sum('amount')]);
-        });
-    }
 
     public function outcome() {
         return $this->belongsTo(Outcome::class);
     }
 
     public function payment() {
-        return $this->belongsTo(MasterOutcomePayment::class, 'master_outcome_payment_id');
+        return $this->belongsTo(MasterPayment::class, 'master_payment_id');
     }
 
     public function tags() {
         return $this->belongsToMany(MasterOutcomeDetailTag::class, 'outcome_detail_tag');
+    }
+
+    protected static function booted() {
+        static::saved(function ($detail) {
+            $detail->outcome->update(['amount' => $detail->outcome->details()->sum('amount')]);
+        });
+
+        static::deleted(function ($detail) {
+            if ($detail->outcome && !$detail->outcome->isForceDeleting()) {
+                $detail->outcome->update(['amount' => $detail->outcome->details()->sum('amount')]);
+            }
+        });
     }
 }

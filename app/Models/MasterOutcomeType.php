@@ -8,12 +8,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class MasterOutcomeHutang extends Model
+class MasterOutcomeType extends Model
 {
-    /** @use HasFactory<\Database\Factories\MasterOutcomeHutangFactory> */
+    /** @use HasFactory<\Database\Factories\MasterOutcomeTypeFactory> */
     use HasFactory, SoftDeletes;
 
-    protected $table = 'master_outcome_hutangs';
+    protected $table = 'master_outcome_types';
 
     protected $fillable = [
         'user_id',
@@ -24,7 +24,7 @@ class MasterOutcomeHutang extends Model
     // Relasi balik ke Outcome
     public function outcomes()
     {
-        return $this->hasMany(Outcome::class, 'master_outcome_hutang_id');
+        return $this->hasMany(Outcome::class, 'master_outcome_type_id');
     }
 
     public function user()

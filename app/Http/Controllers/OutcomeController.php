@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Outcome;
 use Illuminate\Http\Request;
 use App\Http\Resources\OutcomeResource;
+use App\Http\Requests\StoreUpdateOutcomeRequest;
 
 class OutcomeController extends Controller
 {
@@ -20,42 +21,19 @@ class OutcomeController extends Controller
         return OutcomeResource::collection(
             Outcome::query()->where('user_id', auth()->id())
                 ->where('master_period_id', $request->master_period_id)
-                ->with(['category', 'details.tags', 'details.payment'])
-                ->withCount('details')->latest()->cursorPaginate(15)
+                ->with(['category', 'payment', 'type'])
+                ->withCount('details')->latest('date')->get()
         );
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreUpdateOutcomeRequest $request)
     {
         //
-        return DB::transaction(function () use ($request) {
-            $outcome = Outcome::create([
-                'user_id' => auth()->id(),
-                'date' => $request->date,
-                'title' => $request->title,
-                'amount' => $request->has_detail ? 0 : $request->amount,
-                'master_outcome_category_id' => $request->master_outcome_category_id,
-                'has_detail' => $request->has_detail,
-            ]);
-
-            // Jika pas create langsung kirim array details (Hybrid approach)
-            if ($request->has_detail && $request->has('details')) {
-                foreach ($request->details as $item) {
-                    $detail = $outcome->details()->create([
-                        'title' => $item['title'],
-                        'amount' => $item['amount'],
-                        'master_outcome_payment_id' => $item['master_outcome_payment_id'],
-                    ]);
-                    if (!empty($item['tag_ids'])) $detail->tags()->attach($item['tag_ids']);
-                }
-                $outcome->update(['amount' => $outcome->details()->sum('amount')]);
-            }
-
-            return new OutcomeResource($outcome->load('details.tags'));
-        });
+        $data = $request->validated();
+        return $this->success(new OutcomeResource(Outcome::create($data)->load(['category', 'payment', 'type'])), 'Outcome created successfully', 201);
     }
 
     /**
@@ -64,14 +42,17 @@ class OutcomeController extends Controller
     public function show(Outcome $outcome)
     {
         //
+        return $this->data(new OutcomeResource($outcome->load(['category', 'payment', 'type'])));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Outcome $outcome)
+    public function update(StoreUpdateOutcomeRequest $request, Outcome $outcome)
     {
         //
+        $outcome->update($request->validated());
+        return $this->success(new OutcomeResource($outcome->load(['category', 'payment', 'type'])), 'Outcome updated successfully');
     }
 
     /**
@@ -80,5 +61,7 @@ class OutcomeController extends Controller
     public function destroy(Outcome $outcome)
     {
         //
+        $outcome->delete();
+        return $this->success(null, 'Outcome deleted successfully');
     }
 }

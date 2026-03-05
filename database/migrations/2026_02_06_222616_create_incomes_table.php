@@ -17,7 +17,7 @@ return new class extends Migration
                 ->constrained()
                 ->onDelete('cascade');
 
-            $table->foreignId('master_period_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('master_period_id')->constrained()->onDelete('cascade');
             $table->date('date')->index();
             $table->string('title');
             $table->decimal('amount', 15, 2);
@@ -27,6 +27,8 @@ return new class extends Migration
                 ->nullable()
                 ->constrained('master_income_types')
                 ->onDelete('set null');
+
+            $table->foreignId('master_payment_id')->nullable()->index()->constrained('master_payments')->onDelete('set null');
             
             // Relasi ke User
             

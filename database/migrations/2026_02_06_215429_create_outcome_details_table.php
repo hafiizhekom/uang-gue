@@ -19,7 +19,7 @@ return new class extends Migration
             $table->decimal('amount', 15, 2);
             
             // Pakai tabel master payment yang sama
-            $table->foreignId('master_outcome_payment_id')->nullable()->constrained('master_outcome_payments')->onDelete('restrict');
+            $table->foreignId('master_payment_id')->nullable()->constrained('master_payments')->onDelete('set null');
 
             $table->text('note')->nullable();
 

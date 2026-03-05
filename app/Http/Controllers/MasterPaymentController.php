@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\Master\StoreUpdateOutcomePaymentRequest;
-use App\Models\MasterOutcomePayment;
+use App\Http\Requests\Master\StoreUpdatePaymentRequest;
+use App\Models\MasterPayment;
 use Illuminate\Http\Request;
 use App\Http\Resources\MasterResource;
 
-class MasterOutcomePaymentController extends Controller
+class MasterPaymentController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -16,7 +16,7 @@ class MasterOutcomePaymentController extends Controller
     {
         //
         $collection = MasterResource::collection(
-            MasterOutcomePayment::query()
+            MasterPayment::query()
             ->where('user_id', auth()->id())
             ->withCount('outcomes')
             ->latest()
@@ -28,39 +28,39 @@ class MasterOutcomePaymentController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreUpdateOutcomePaymentRequest $request)
+    public function store(StoreUpdatePaymentRequest $request)
     {
         //
-        $data = MasterOutcomePayment::create($request->validated());
+        $data = MasterPayment::create($request->validated());
         return $this->success(new MasterResource($data), 'Outcome Payment created successfully', 201);
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(MasterOutcomePayment $masterOutcomePayment)
+    public function show(MasterPayment $masterPayment)
     {
         //
-        return new MasterResource($masterOutcomePayment);
+        return new MasterResource($masterPayment);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, MasterOutcomePayment $masterOutcomePayment)
+    public function update(StoreUpdatePaymentRequest $request, MasterPayment $masterPayment)
     {
         //
-        $masterOutcomePayment->update($request->validated());
-        return $this->success(new MasterResource($masterOutcomePayment), 'Outcome Payment updated successfully', 200);
+        $masterPayment->update($request->validated());
+        return $this->success(new MasterResource($masterPayment), 'Outcome Payment updated successfully', 200);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(MasterOutcomePayment $masterOutcomePayment)
+    public function destroy(MasterPayment $masterPayment)
     {
         //
-        $masterOutcomePayment->delete();
+        $masterPayment->delete();
         return $this->success(null, 'Outcome Payment deleted successfully');
     }
 }

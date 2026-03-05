@@ -18,9 +18,29 @@ class OutcomeDetailResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'amount' => (float) $this->amount,
-            'payment' => $this->payment?->name,
-            'tags' => $this->tags->pluck('name'), // Ini hasil dari pivot table
+            'payment' => $this->whenLoaded('payment', 
+                function() {
+                    return [
+                        'id' => $this->payment->id,
+                        'name' => $this->payment->name,
+                        'slug' => $this->payment->slug,
+                    ];
+                }
+            ),
+            'tags' => $this->whenLoaded('tags', 
+                function() {
+                    return $this->tags->map(function($tag) {
+                        return [
+                            'id' => $tag->id,
+                            'name' => $tag->name,
+                            'slug' => $tag->slug,
+                        ];
+                    });
+                }
+            ),
             'note' => $this->note,
+            'date' => $this->date->format('d-m-Y'),
+            'created_at' => $this->created_at->format('d-m-Y'),
         ];
     }
 }

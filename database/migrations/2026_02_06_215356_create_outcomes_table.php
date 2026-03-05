@@ -17,15 +17,16 @@ return new class extends Migration
             $table->foreignId('master_period_id')->constrained()->onDelete('cascade');
             $table->date('date')->nullable()->index();
             $table->string('title');
-            $table->decimal('amount', 15, 2);
+            $table->decimal('amount', 15, 2)->default(0);
             $table->boolean('has_detail')->default(false);
 
             // Relasi ke Master Tables yang baru dinamain ulang
             $table->foreignId('master_outcome_category_id')->nullable()->index()->constrained('master_outcome_categories')->onDelete('set null');
-            $table->foreignId('master_outcome_hutang_id')->nullable()->index()->constrained('master_outcome_hutangs')->onDelete('set null');
-            $table->foreignId('master_outcome_payment_id')->nullable()->index()->constrained('master_outcome_payments')->onDelete('set null');
+            $table->foreignId('master_outcome_type_id')->nullable()->index()->constrained('master_outcome_types')->onDelete('set null');
+            $table->foreignId('master_payment_id')->nullable()->index()->constrained('master_payments')->onDelete('set null');
             
 
+            $table->text('note')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

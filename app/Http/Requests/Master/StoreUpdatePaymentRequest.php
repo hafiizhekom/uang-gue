@@ -5,7 +5,7 @@ namespace App\Http\Requests\Master;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StoreUpdateOutcomeHutangRequest extends FormRequest
+class StoreUpdatePaymentRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -17,7 +17,7 @@ class StoreUpdateOutcomeHutangRequest extends FormRequest
 
     public function prepareForValidation()
     {
-        $id = $this->route('master_outcome_hutang');
+        $id = $this->route('master_payment');
         if (!$id) {
             $this->merge([
                 'user_id' => auth()->id(),
@@ -36,7 +36,7 @@ class StoreUpdateOutcomeHutangRequest extends FormRequest
     public function rules(): array
     {
 
-        $id = $this->route('master_outcome_hutang');
+        $id = $this->route('master_payment');
         $rules = [
             //
             'user_id' => 'required|exists:users,id',
@@ -44,6 +44,11 @@ class StoreUpdateOutcomeHutangRequest extends FormRequest
                 'required',
                 'string',
                 'max:255'
+            ],
+            'balance' => [
+                'required',
+                'numeric',
+                'min:0'
             ],
         ];
 
@@ -53,7 +58,7 @@ class StoreUpdateOutcomeHutangRequest extends FormRequest
                 'string',
                 'alpha_dash',
                 'max:255',
-                Rule::unique('master_outcome_hutangs')->where('user_id', auth()->id())
+                Rule::unique('master_payments')->where('user_id', auth()->id())
             ];
         }
 

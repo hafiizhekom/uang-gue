@@ -19,12 +19,12 @@ class IncomeFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id' => User::factory(), // Bikin user baru otomatis
+            'user_id' => User::factory(), 
+            'master_period_id' => MasterPeriod::factory(),
             'master_period_id' => MasterPeriod::factory(),
             'date' => fake()->date(),
             'title' => fake()->sentence(3),
             'amount' => fake()->numberBetween(1000000, 10000000),
-            'master_income_type_id' => MasterIncomeType::inRandomOrder()->first()->id,
             'note' => fake()->optional()->sentence(),
         ];
     }

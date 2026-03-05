@@ -13,6 +13,8 @@ class MasterOutcomeDetailTag extends Model
     /** @use HasFactory<\Database\Factories\MasterOutcomeDetailTagFactory> */
     use HasFactory, SoftDeletes;
 
+    protected $table = 'master_outcome_detail_tags';
+
     protected $fillable = [
         'user_id',
         'name', 

@@ -4,9 +4,9 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\User;
-use App\Models\MasterOutcomePayment;
+use App\Models\MasterPayment;
 
-class MasterOutcomePaymentSeeder extends Seeder
+class MasterPaymentSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -18,7 +18,7 @@ class MasterOutcomePaymentSeeder extends Seeder
         $payments = ['Mandiri', 'BCA', 'BluBCA', 'Cash', 'OVO', 'Gopay', 'ShopeePay', 'Tokopedia Saldo', 'Dana'];
         foreach ($users as $user) {
             foreach ($payments as $p) {
-                MasterOutcomePayment::create(['user_id' => $user->id, 'name' => $p, 'slug' => str($p)->slug()]);
+                MasterPayment::create(['user_id' => $user->id, 'name' => $p, 'slug' => str($p)->slug()]);
             }
         }
     }

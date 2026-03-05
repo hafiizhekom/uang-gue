@@ -29,9 +29,14 @@ use Illuminate\Foundation\Auth\User as AuthenticatableUser;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property string|null $deleted_at
- * 
- * @property Collection|TicketAttachment[] $ticket_attachments
- * @property Collection|Ticket[] $tickets
+ * @property Collection|Income[] $incomes
+ * @property Collection|Outcome[] $outcomes
+ * @property Collection|MasterPeriod[] $periods
+ * @property Collection|MasterIncomeType[] $income_types
+ * @property Collection|MasterOutcomeCategory[] $outcome_categories
+ * @property Collection|MasterOutcomeType[] $outcome_types
+ * @property Collection|MasterOutcomeDetailTag[] $outcome_detail_tags
+ * @property Collection|MasterPayment[] $payments
  *
  * @package App\Models
  */
@@ -59,7 +64,31 @@ class User extends AuthenticatableUser
 		'remember_token'
 	];
 
-	// Di dalam class User
+	public function income_types(): HasMany
+	{
+		return $this->hasMany(MasterIncomeType::class);
+	}
+
+	public function outcome_categories(): HasMany
+	{
+		return $this->hasMany(MasterOutcomeCategory::class);
+	}
+
+	public function outcome_types(): HasMany
+	{
+		return $this->hasMany(MasterOutcomeType::class);
+	}
+
+	public function outcome_detail_tags(): HasMany
+	{
+		return $this->hasMany(MasterOutcomeDetailTag::class);
+	}
+
+	public function payments(): HasMany
+	{
+		return $this->hasMany(MasterPayment::class);
+	}
+	
 	public function incomes(): HasMany
 	{
 		return $this->hasMany(Income::class);
@@ -74,4 +103,31 @@ class User extends AuthenticatableUser
 	{
 		return $this->hasMany(MasterPeriod::class);
 	}
+
+	protected static function booted()
+    {
+        static::deleting(function ($model) {
+            if (!$model->isForceDeleting()) {
+				$model->periods()->delete();
+				$model->income_types()->delete();
+				$model->outcome_categories()->delete();
+				$model->outcome_types()->delete();
+				$model->outcome_detail_tags()->delete();
+				$model->payments()->delete();
+				$model->incomes()->delete();
+                $model->outcomes()->delete();
+            }
+        });
+
+        static::restoring(function ($model) {
+			$model->periods()->withTrashed()->restore();
+			$model->income_types()->withTrashed()->restore();
+			$model->outcome_categories()->withTrashed()->restore();
+			$model->outcome_types()->withTrashed()->restore();
+			$model->outcome_detail_tags()->withTrashed()->restore();
+			$model->payments()->withTrashed()->restore();
+            $model->incomes()->withTrashed()->restore();
+            $model->outcomes()->withTrashed()->restore();
+        });
+    }
 }

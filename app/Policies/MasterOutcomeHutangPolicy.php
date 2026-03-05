@@ -2,11 +2,11 @@
 
 namespace App\Policies;
 
-use App\Models\MasterOutcomeHutang;
+use App\Models\MasterOutcomeType;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
 
-class MasterOutcomeHutangPolicy
+class MasterOutcomeTypePolicy
 {
     /**
      * Determine whether the user can view any models.
@@ -19,9 +19,9 @@ class MasterOutcomeHutangPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, MasterOutcomeHutang $masterOutcomeHutang): bool
+    public function view(User $user, MasterOutcomeType $masterOutcomeType): bool
     {
-        return $user->id === $masterOutcomeHutang->user_id;
+        return $user->id === $masterOutcomeType->user_id;
     }
 
     /**
@@ -35,23 +35,23 @@ class MasterOutcomeHutangPolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, MasterOutcomeHutang $masterOutcomeHutang): bool
+    public function update(User $user, MasterOutcomeType $masterOutcomeType): bool
     {
-        return $user->id === $masterOutcomeHutang->user_id;
+        return $user->id === $masterOutcomeType->user_id;
     }
 
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, MasterOutcomeHutang $masterOutcomeHutang): bool
+    public function delete(User $user, MasterOutcomeType $masterOutcomeType): bool
     {
-        return $user->id === $masterOutcomeHutang->user_id;    
+        return $user->id === $masterOutcomeType->user_id;    
     }
 
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, MasterOutcomeHutang $masterOutcomeHutang): bool
+    public function restore(User $user, MasterOutcomeType $masterOutcomeType): bool
     {
         return false;
     }
@@ -59,7 +59,7 @@ class MasterOutcomeHutangPolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, MasterOutcomeHutang $masterOutcomeHutang): bool
+    public function forceDelete(User $user, MasterOutcomeType $masterOutcomeType): bool
     {
         return false;
     }

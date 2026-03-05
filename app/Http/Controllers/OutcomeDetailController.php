@@ -2,42 +2,54 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreUpdateOutcomeDetailRequest;
+use App\Http\Resources\OutcomeDetailResource;
 use App\Models\OutcomeDetail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 
 class OutcomeDetailController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         //
+        $request->validate([
+            'outcome_id' => 'required|exists:outcomes,id',
+        ]);
+        return OutcomeDetailResource::collection(
+            OutcomeDetail::query()
+            ->where('outcome_id', $request->outcome_id)
+            ->whereHas('outcome', function($q) {
+                $q->where('user_id', auth()->id());
+            })
+            ->with(['payment', 'tags'])
+            ->latest('date')
+            ->get()
+        );
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreUpdateOutcomeDetailRequest $request)
     {
         //
-        return DB::transaction(function () use ($request) {
-            $detail = OutcomeDetail::create([
-                'outcome_id' => $request->outcome_id,
-                'title' => $request->title,
-                'amount' => $request->amount,
-                'master_outcome_payment_id' => $request->master_outcome_payment_id,
-            ]);
+        $data = $request->validated();
+        $detail = OutcomeDetail::create(Arr::except($data, ['tags']));
 
-            if ($request->has('tag_ids')) {
-                $detail->tags()->attach($request->tag_ids);
-            }
+        if (isset($data['tags'])) {
+            $detail->tags()->sync($data['tags']);
+        }
 
-            // Sync total amount di parent setiap kali ada detail baru
-            $detail->outcome->update(['amount' => $detail->outcome->details()->sum('amount')]);
-
-            return new OutcomeDetailResource($detail->load('tags'));
-        });
+        return $this->success(
+            new OutcomeDetailResource($detail->load(['payment', 'tags'])), 
+            'Outcome detail created successfully', 
+            201
+        );
     }
 
     /**
@@ -51,19 +63,17 @@ class OutcomeDetailController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, OutcomeDetail $outcomeDetail)
+    public function update(StoreUpdateOutcomeDetailRequest $request, OutcomeDetail $outcomeDetail)
     {
         //
-        $outcomeDetail->update($request->all());
-        
-        if ($request->has('tag_ids')) {
-            $outcomeDetail->tags()->sync($request->tag_ids);
+        $data = $request->validated();
+        $detail = $outcomeDetail->update(Arr::except($data, ['tags']));
+
+        if (isset($data['tags'])) {
+            $outcomeDetail->tags()->sync($data['tags']);
         }
 
-        // Sync total amount parent
-        $outcomeDetail->outcome->update(['amount' => $outcomeDetail->outcome->details()->sum('amount')]);
-
-        return new OutcomeDetailResource($outcomeDetail->load('tags'));
+        return $this->success(new OutcomeDetailResource($outcomeDetail->load(['payment', 'tags'])), 'Outcome detail updated successfully');
     }
 
     /**
@@ -72,12 +82,8 @@ class OutcomeDetailController extends Controller
     public function destroy(OutcomeDetail $outcomeDetail)
     {
         //
-        $parent = $outcomeDetail->outcome;
+        $outcomeDetail->tags()->detach();
         $outcomeDetail->delete();
-        
-        // Sync total amount parent setelah delete
-        $parent->update(['amount' => $parent->details()->sum('amount')]);
-
-        return response()->json(['message' => 'Deleted and Parent Synced']);
+        return $this->success(null, 'Outcome detail deleted successfully');
     }
 }
