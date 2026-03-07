@@ -32,24 +32,18 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->call([
-            UserSeeder::class,
-            MasterIncomeTypeSeeder::class,
-            MasterOutcomeCategorySeeder::class,
-            MasterPaymentSeeder::class,
-            MasterOutcomeTypeSeeder::class,
-            MasterOutcomeDetailTagSeeder::class,
-            MasterPeriodSeeder::class,
-            IncomeSeeder::class,
-            OutcomeSeeder::class,
+            UserSeeder::class, //Bikin 10 user
+            MasterIncomeTypeSeeder::class, //Get semua user, buat 3 jenis income untuk masing2 user
+            MasterOutcomeCategorySeeder::class, //Get semua user, buat 9 jenis outcome category untuk masing2 user
+            MasterPaymentSeeder::class, //Get semua user, buat 10 jenis payment untuk masing2 user
+            MasterOutcomeTypeSeeder::class, //Get semua user, buat 3 jenis outcome type untuk masing2 user
+            MasterOutcomeDetailTagSeeder::class, //Get semua user, buat 4 jenis outcome detail tag untuk masing2 user
+            MasterPeriodSeeder::class, //Get semua user, buat 4 period (bulan ini, bulan depan, dst) untuk masing2 user
+            IncomeSeeder::class, //Get semua period, buat 10 income untuk masing2 period dengan type dan payment random dari user yang punya period tsb
+            OutcomeSeeder::class, //Get semua period, buat 10 outcome untuk masing2 period dengan category, type, payment random dari user yang punya period tsb. 5 outcome punya detail, 5 outcome ga punya detail
         ]);
 
-        // $allTags = MasterOutcomeDetailTag::all();
-        // OutcomeDetail::all()->each(function ($detail) use ($allTags) {
-        //     $detail->tags()->attach(
-        //         $allTags->random(rand(1, 2))->pluck('id')->toArray()
-        //     );
-        // });
-
+        // Update amount di outcome yang punya detail supaya sesuai dengan jumlah detailnya
         Outcome::where('has_detail', true)->with('details')->get()->each(function ($outcome) {
             $outcome->update([
                 'amount' => $outcome->details->sum('amount')

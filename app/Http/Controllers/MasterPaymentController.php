@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Master\StoreUpdatePaymentRequest;
-use App\Models\MasterPayment;
-use Illuminate\Http\Request;
 use App\Http\Resources\MasterResource;
+use App\Models\MasterPayment;
 
 class MasterPaymentController extends Controller
 {
@@ -19,6 +19,8 @@ class MasterPaymentController extends Controller
             MasterPayment::query()
             ->where('user_id', auth()->id())
             ->withCount('outcomes')
+            ->withCount('outcome_details')
+            ->withCount('incomes')
             ->latest()
             ->cursorPaginate(10)
         );
