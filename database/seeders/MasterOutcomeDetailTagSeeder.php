@@ -15,7 +15,7 @@ class MasterOutcomeDetailTagSeeder extends Seeder
     {
         //
         $users = User::all();
-        $tags = ['Jajan', 'Kebutuhan', 'Air', 'Makan Diluar'];
+        $tags = ['Bumbu Dapur', 'Kebutuhan Pokok', 'Air', 'Makan Diluar'];
         foreach ($users as $user) {
             foreach ($tags as $t) {
                 MasterOutcomeDetailTag::updateOrCreate(['user_id' => $user->id, 'slug' => str($t)->slug()], ['name' => $t]);

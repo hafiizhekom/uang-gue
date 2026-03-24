@@ -15,7 +15,7 @@ class MasterOutcomeCategorySeeder extends Seeder
     {
         //
         $users = User::all();
-        $outcomeCategories = ['Rumah', 'Type', 'Biaya Hidup', 'Piutang', 'Renovasi Rumah', 'Kendaraan', 'Rokok', 'Donasi', 'Kebutuhan Anak'];
+        $outcomeCategories = ['Rumah', 'Type', 'Biaya Hidup', 'Piutang', 'Renovasi Rumah', 'Kendaraan', 'Rokok', 'Donasi', 'Kebutuhan Anak', 'Hutang'];
         foreach ($users as $user) {
             foreach ($outcomeCategories as $c) {
                 MasterOutcomeCategory::create(['user_id' => $user->id, 'name' => $c, 'slug' => str($c)->slug()]);

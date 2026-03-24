@@ -15,7 +15,7 @@ class MasterOutcomeTypeSeeder extends Seeder
     {
         //
         $users = User::all();
-        $types = ['Pinjaman', 'PayLater', 'Cicilan'];
+        $types = ['PayLater', 'Cicilan'];
         foreach ($users as $user) {
             foreach ($types as $h) {
                 MasterOutcomeType::create(['user_id' => $user->id, 'name' => $h, 'slug' => str($h)->slug()]);

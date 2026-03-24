@@ -15,7 +15,7 @@ class MasterIncomeTypeSeeder extends Seeder
     {
         //
         $users = User::all();
-        $incomeTypes = ['Salary', 'Pinjaman', 'Revenue'];
+        $incomeTypes = ['Gaji', 'Pinjaman', 'Hasil Freelance'];
         foreach ($users as $user) {
             foreach ($incomeTypes as $t) {
                 MasterIncomeType::create(

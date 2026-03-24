@@ -10,12 +10,14 @@ use App\Http\Controllers\MasterPaymentController;
 use App\Http\Controllers\MasterPeriodController;
 use App\Http\Controllers\OutcomeController;
 use App\Http\Controllers\OutcomeDetailController;
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 
 // Public Routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::post('/auth/google', [AuthController::class, 'handleGoogleAuth']);
 
 // Protected Routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -44,6 +46,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('outcome-details', OutcomeDetailController::class)->except(['show']);
     // Route::apiResource('outcome-details', OutcomeDetailController::class)->except(['index', 'store']);
     // Route::post('outcomes/{outcome_id}/details', [OutcomeDetailController::class, 'store']); // Create detail buat parent tertentu
+
+    // --- DASHBOARD ---
+    Route::get('/dashboard', [DashboardController::class, 'index']);
 
     // --- AUTH & ME ---
     Route::post('/logout', [AuthController::class, 'logout']);
