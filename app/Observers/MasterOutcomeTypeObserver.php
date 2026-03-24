@@ -3,9 +3,12 @@
 namespace App\Observers;
 
 use App\Models\MasterOutcomeType;
+use App\Traits\ClearDashboardCache;
+use Illuminate\Support\Facades\Log;
 
 class MasterOutcomeTypeObserver
 {
+    use ClearDashboardCache;
     /**
      * Handle the MasterOutcomeType "created" event.
      */
@@ -17,6 +20,8 @@ class MasterOutcomeTypeObserver
             'id'      => $masterOutcomeType->id,
             'user_id' => auth()->id(),
         ]);
+
+        $this->refreshDashboard(auth()->id());
     }
 
     /**
@@ -30,6 +35,8 @@ class MasterOutcomeTypeObserver
             'id'      => $masterOutcomeType->id,
             'user_id' => auth()->id(),
         ]);
+
+        $this->refreshDashboard(auth()->id());
     }
 
     /**
@@ -43,6 +50,8 @@ class MasterOutcomeTypeObserver
             'id'      => $masterOutcomeType->id,
             'user_id' => auth()->id(),
         ]);
+
+        $this->refreshDashboard(auth()->id());
     }
 
     /**
@@ -56,6 +65,8 @@ class MasterOutcomeTypeObserver
             'id'      => $masterOutcomeType->id,
             'user_id' => auth()->id(),
         ]);
+
+        $this->refreshDashboard(auth()->id());
     }
 
     /**
@@ -69,5 +80,7 @@ class MasterOutcomeTypeObserver
             'id'      => $masterOutcomeType->id,
             'user_id' => auth()->id(),
         ]);
+
+        $this->refreshDashboard(auth()->id());
     }
 }

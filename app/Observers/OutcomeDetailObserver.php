@@ -2,22 +2,22 @@
 
 namespace App\Observers;
 
-use App\Models\MasterPeriod;
+use App\Models\OutcomeDetail;
 use App\Traits\ClearDashboardCache;
 use Illuminate\Support\Facades\Log;
 
-class MasterPeriodObserver
+class OutcomeDetailObserver
 {
     use ClearDashboardCache;
     /**
-     * Handle the MasterPeriod "created" event.
+     * Handle the OutcomeDetail "created" event.
      */
-    public function created(MasterPeriod $masterPeriod): void
+    public function created(OutcomeDetail $outcome_detail): void
     {
         //
         Log::channel('observer')->info("Data Created via Observer", [
-            'model'   => 'MasterPeriod',
-            'id'      => $masterPeriod->id,
+            'model'   => 'OutcomeDetail',
+            'id'      => $outcome_detail->id,
             'user_id' => auth()->id(),
         ]);
 
@@ -25,14 +25,14 @@ class MasterPeriodObserver
     }
 
     /**
-     * Handle the MasterPeriod "updated" event.
+     * Handle the OutcomeDetail "updated" event.
      */
-    public function updated(MasterPeriod $masterPeriod): void
+    public function updated(OutcomeDetail $outcome_detail): void
     {
         //
         Log::channel('observer')->info("Data Updated via Observer", [
-            'model'   => 'MasterPeriod',
-            'id'      => $masterPeriod->id,
+            'model'   => 'OutcomeDetail',
+            'id'      => $outcome_detail->id,
             'user_id' => auth()->id(),
         ]);
 
@@ -40,14 +40,14 @@ class MasterPeriodObserver
     }
 
     /**
-     * Handle the MasterPeriod "deleted" event.
+     * Handle the OutcomeDetail "deleted" event.
      */
-    public function deleted(MasterPeriod $masterPeriod): void
+    public function deleted(OutcomeDetail $outcome_detail): void
     {
         //
         Log::channel('observer')->info("Data Deleted via Observer", [
-            'model'   => 'MasterPeriod',
-            'id'      => $masterPeriod->id,
+            'model'   => 'OutcomeDetail',
+            'id'      => $outcome_detail->id,
             'user_id' => auth()->id(),
         ]);
 
@@ -55,14 +55,14 @@ class MasterPeriodObserver
     }
 
     /**
-     * Handle the MasterPeriod "restored" event.
+     * Handle the OutcomeDetail "restored" event.
      */
-    public function restored(MasterPeriod $masterPeriod): void
+    public function restored(OutcomeDetail $outcome_detail): void
     {
         //
         Log::channel('observer')->info("Data Restored via Observer", [
-            'model'   => 'MasterPeriod',
-            'id'      => $masterPeriod->id,
+            'model'   => 'OutcomeDetail',
+            'id'      => $outcome_detail->id,
             'user_id' => auth()->id(),
         ]);
 
@@ -70,14 +70,14 @@ class MasterPeriodObserver
     }
 
     /**
-     * Handle the MasterPeriod "force deleted" event.
+     * Handle the OutcomeDetail "force deleted" event.
      */
-    public function forceDeleted(MasterPeriod $masterPeriod): void
+    public function forceDeleted(OutcomeDetail $outcome_detail): void
     {
         //
         Log::channel('observer')->info("Data Force Deleted via Observer", [
-            'model'   => 'MasterPeriod',
-            'id'      => $masterPeriod->id,
+            'model'   => 'OutcomeDetail',
+            'id'      => $outcome_detail->id,
             'user_id' => auth()->id(),
         ]);
 

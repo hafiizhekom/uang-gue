@@ -3,9 +3,12 @@
 namespace App\Observers;
 
 use App\Models\MasterOutcomeCategory;
+use App\Traits\ClearDashboardCache;
+use Illuminate\Support\Facades\Log;
 
 class MasterOutcomeCategoryObserver
 {
+    use ClearDashboardCache;
     /**
      * Handle the MasterOutcomeCategory "created" event.
      */
@@ -17,6 +20,7 @@ class MasterOutcomeCategoryObserver
             'id'      => $masterOutcomeCategory->id,
             'user_id' => auth()->id(),
         ]);
+        $this->refreshDashboard(auth()->id());
     }
 
     /**
@@ -30,6 +34,7 @@ class MasterOutcomeCategoryObserver
             'id'      => $masterOutcomeCategory->id,
             'user_id' => auth()->id(),
         ]);
+        $this->refreshDashboard(auth()->id());
     }
 
     /**
@@ -43,6 +48,7 @@ class MasterOutcomeCategoryObserver
             'id'      => $masterOutcomeCategory->id,
             'user_id' => auth()->id(),
         ]);
+        $this->refreshDashboard(auth()->id());
     }
 
     /**
@@ -56,6 +62,8 @@ class MasterOutcomeCategoryObserver
             'id'      => $masterOutcomeCategory->id,
             'user_id' => auth()->id(),
         ]);
+
+        $this->refreshDashboard(auth()->id());
     }
 
     /**
@@ -69,5 +77,7 @@ class MasterOutcomeCategoryObserver
             'id'      => $masterOutcomeCategory->id,
             'user_id' => auth()->id(),
         ]);
+
+        $this->refreshDashboard(auth()->id());
     }
 }

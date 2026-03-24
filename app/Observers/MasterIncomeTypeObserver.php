@@ -4,9 +4,11 @@ namespace App\Observers;
 
 use Illuminate\Support\Facades\Log;
 use App\Models\MasterIncomeType;
+use App\Traits\ClearDashboardCache;
 
 class MasterIncomeTypeObserver
 {
+    use ClearDashboardCache;
     /**
      * Handle the MasterIncomeType "created" event.
      */
@@ -18,6 +20,8 @@ class MasterIncomeTypeObserver
             'id'      => $masterIncomeType->id,
             'user_id' => auth()->id(),
         ]);
+
+        $this->refreshDashboard(auth()->id());
     }
 
     /**
@@ -31,6 +35,8 @@ class MasterIncomeTypeObserver
             'id'      => $masterIncomeType->id,
             'user_id' => auth()->id(),
         ]);
+
+        $this->refreshDashboard(auth()->id());
     }
 
     /**
@@ -44,6 +50,8 @@ class MasterIncomeTypeObserver
             'id'      => $masterIncomeType->id,
             'user_id' => auth()->id(),
         ]);
+
+        $this->refreshDashboard(auth()->id());
     }
 
     /**
@@ -57,6 +65,8 @@ class MasterIncomeTypeObserver
             'id'      => $masterIncomeType->id,
             'user_id' => auth()->id(),
         ]);
+
+        $this->refreshDashboard(auth()->id());
     }
 
     /**
@@ -70,5 +80,7 @@ class MasterIncomeTypeObserver
             'id'      => $masterIncomeType->id,
             'user_id' => auth()->id(),
         ]);
+
+        $this->refreshDashboard(auth()->id());
     }
 }
