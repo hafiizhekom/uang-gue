@@ -21,6 +21,8 @@ COPY . .
 # Install dependencies & optimize
 RUN composer install --no-dev --optimize-autoloader --no-scripts
 
+RUN php artisan package:discover --ansi
+
 # ---------------------------------------------------------
 
 # STAGE 2: Production Image (The "Box")
