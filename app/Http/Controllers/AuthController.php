@@ -9,12 +9,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
 
     public function handleGoogleAuth(Request $request, UserSetupService $setupService)
     {
+
         $idToken = $request->id_token;
 
         if (!$idToken) {
@@ -57,6 +59,8 @@ class AuthController extends Controller
 
         // 5. Generate Internal Token (Sanctum)
         $token = $user->createToken('auth_token')->plainTextToken;
+
+        Log::info("User {$user->email} authenticated via Google. Token generated.");
 
         return response()->json([
             'access_token' => $token,

@@ -18,7 +18,11 @@ class MasterOutcomeDetailTagController extends Controller
         $collection = MasterResource::collection(
             MasterOutcomeDetailTag::query()
             ->where('user_id', auth()->id())
-            ->withCount('outcome_details')
+            ->withCount(['outcome_details' => function ($query) {
+                $query->whereHas('outcome', function ($q) {
+                    $q->whereNull('deleted_at');
+                });
+            }])
             ->latest()
             ->cursorPaginate(10)
         );
