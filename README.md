@@ -1,59 +1,169 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Uangku API
 
 <p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+  <img src="https://img.shields.io/badge/Laravel-12-red.svg" alt="Laravel Version">
+  <img src="https://img.shields.io/badge/PHP-8.2+-blue.svg" alt="PHP Version">
+  <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
 </p>
 
-## About Laravel
+## Tentang Proyek
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+**Uangku API** adalah RESTful API untuk aplikasi pelacak keuangan pribadi (personal finance tracker). Aplikasi ini memungkinkan pengguna untuk mengelola pemasukan, pengeluaran, dan data master terkait dengan sistem periode akuntansi yang fleksibel. Dibangun menggunakan Laravel 12, dengan fokus pada keamanan, performa, dan skalabilitas.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Fitur Utama
+- **Autentikasi**: Menggunakan Laravel Sanctum untuk API token-based authentication, termasuk dukungan Google OAuth.
+- **Master Data**: Kelola periode akuntansi, tipe pemasukan/pengeluaran, kategori, metode pembayaran, dan tag.
+- **Transaksi**:
+  - **Pemasukan (Incomes)**: Catat pemasukan dengan tipe, periode, dan metode pembayaran.
+  - **Pengeluaran (Outcomes)**: Sistem hybrid - bisa sederhana atau dengan detail sub-item. Amount otomatis tersinkronisasi.
+- **Dashboard**: Ringkasan keuangan dengan chart data, balance bulanan, dan wallet aktif. Menggunakan caching untuk performa optimal.
+- **Authorization**: Policies ketat - pengguna hanya bisa akses data miliknya sendiri.
+- **Soft Deletes**: Semua data dapat dihapus sementara dan dipulihkan.
+- **API Documentation**: Lengkap dengan OpenAPI 3.0 spec.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Tech Stack
+- **Backend**: Laravel 12 (PHP 8.2+)
+- **Database**: MySQL/PostgreSQL (dengan migrations dan seeders)
+- **Authentication**: Laravel Sanctum
+- **Frontend Build**: Vite + Tailwind CSS (untuk UI jika ada)
+- **Testing**: PHPUnit untuk unit dan feature tests
+- **Containerization**: Laravel Sail (Docker)
+- **Code Quality**: Laravel Pint untuk linting
 
-## Learning Laravel
+## Instalasi & Setup
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### Prasyarat
+- PHP 8.2 atau lebih tinggi
+- Composer
+- Node.js & npm (untuk frontend build)
+- Docker & Docker Compose (untuk Sail)
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### Langkah Instalasi
+1. **Clone Repository**:
+   ```bash
+   git clone https://github.com/hafiizhekom/uang-gue.git
+   cd uang-gue
+   ```
 
-## Laravel Sponsors
+2. **Install Dependencies**:
+   ```bash
+   composer install
+   npm install
+   ```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+3. **Environment Setup**:
+   - Copy `.env.example` ke `.env`:
+     ```bash
+     cp .env.example .env
+     ```
+   - Generate application key:
+     ```bash
+     php artisan key:generate
+     ```
+   - Konfigurasi database di `.env` (gunakan Sail atau database lokal).
 
-### Premium Partners
+4. **Database Migration & Seeding**:
+   ```bash
+   php artisan migrate
+   php artisan db:seed  # Jika ada seeders
+   ```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+5. **Build Assets**:
+   ```bash
+   npm run build
+   ```
 
-## Contributing
+6. **Jalankan Aplikasi**:
+   - Menggunakan Sail:
+     ```bash
+     ./vendor/bin/sail up -d
+     ```
+   - Atau langsung:
+     ```bash
+     php artisan serve
+     npm run dev  # Untuk hot reload frontend
+     ```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Script Otomatis
+Gunakan script setup bawaan:
+```bash
+composer run setup
+```
 
-## Code of Conduct
+Untuk development dengan semua service:
+```bash
+composer run dev
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Penggunaan API
 
-## Security Vulnerabilities
+API tersedia di `http://localhost:8000/api` (saat menggunakan Sail).
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Autentikasi
+- **Register**: `POST /register` - Body: `{name, email, password}`
+- **Login**: `POST /login` - Body: `{email, password}` - Return: token
+- **Google Auth**: `POST /auth/google` - Body: `{token}` (dari Google OAuth)
+- **Logout**: `POST /logout` - Header: `Authorization: Bearer {token}`
+- **Me**: `GET /me` - Header: `Authorization: Bearer {token}`
 
-## License
+Semua endpoint selain register/login memerlukan header `Authorization: Bearer {token}`.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Endpoint Utama
+- **Master Data**:
+  - `GET/POST/PUT/DELETE /master-periods`
+  - `GET/POST/PUT/DELETE /master-income-types`
+  - `GET/POST/PUT/DELETE /master-outcome-categories`
+  - `GET/POST/PUT/DELETE /master-outcome-types`
+  - `GET/POST/PUT/DELETE /master-payments`
+  - `GET/POST/PUT/DELETE /master-outcome-detail-tags`
+
+- **Transaksi**:
+  - `GET/POST/PUT/DELETE /incomes` - Query: `?master_period_id={id}`
+  - `GET/POST/PUT/DELETE /outcomes`
+  - `GET/POST/PUT/DELETE /outcome-details` (untuk sub-item outcomes)
+
+- **Dashboard**:
+  - `GET /dashboard` - Query: `?active_period={id}` - Return: balance, charts, wallets
+
+### Contoh Request
+```bash
+# Login
+curl -X POST http://localhost:8000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","password":"password"}'
+
+# Get Incomes
+curl -X GET http://localhost:8000/api/incomes?master_period_id=1 \
+  -H "Authorization: Bearer {token}"
+```
+
+### Dokumentasi Lengkap
+Lihat [OpenAPI Spec](openapi.yaml) untuk detail schema, responses, dan contoh.
+
+## Testing
+Jalankan tests dengan:
+```bash
+php artisan test
+# Atau dengan Sail
+./vendor/bin/sail test
+```
+
+## Kontribusi
+1. Fork repository ini.
+2. Buat branch fitur baru (`git checkout -b feature/AmazingFeature`).
+3. Commit perubahan (`git commit -m 'Add some AmazingFeature'`).
+4. Push ke branch (`git push origin feature/AmazingFeature`).
+5. Buat Pull Request.
+
+Pastikan kode mengikuti standar Laravel Pint dan memiliki tests.
+
+## Lisensi
+Proyek ini menggunakan lisensi MIT. Lihat file [LICENSE](LICENSE) untuk detail.
+
+## Kontak
+- **Owner**: [hafiizhekom](https://github.com/hafiizhekom)
+- **Repository**: [uang-gue](https://github.com/hafiizhekom/uang-gue)
+
+---
+
+*Dibangun dengan ❤️ menggunakan Laravel.*
