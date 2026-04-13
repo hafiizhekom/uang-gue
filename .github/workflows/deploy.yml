@@ -28,8 +28,8 @@ jobs:
 
       - name: Push image to DigitalOcean Container Registry
         run: |
-          docker tag uanggue-prod:latest registry.digitalocean.com/uangku-registry/api:latest
-          docker push registry.digitalocean.com/uangku-registry/api:latest
+          docker tag uanggue-prod:latest registry.digitalocean.com/uang-gue-registry/api:latest
+          docker push registry.digitalocean.com/uang-gue-registry/api:latest
 
       - name: Copy docker-compose.prod.yml to Server
         uses: appleboy/scp-action@v0.1.7
