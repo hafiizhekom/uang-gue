@@ -25,6 +25,9 @@ jobs:
         uses: digitalocean/action-doctl@v2
         with:
           token: ${{ secrets.DIGITALOCEAN_TOKEN }}
+      
+      - name: Docker Login to DigitalOcean Registry
+        run: echo ${{ secrets.DIGITALOCEAN_TOKEN }} | docker login registry.digitalocean.com -u ${{ secrets.DIGITALOCEAN_TOKEN }} --password-stdin
 
       - name: Push image to DigitalOcean Container Registry
         run: |
