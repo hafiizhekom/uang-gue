@@ -2,12 +2,12 @@ name: Build and Push to Registry
 
 on:
   push:
-    branches: [ main ] # Robot ini bakal kerja pas lo merge ke main
+    branches: [ main ]
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    environment: production # Ini kunci biar dia bisa baca secrets lo
+    environment: production
 
     steps:
       - name: Checkout Code
@@ -16,8 +16,46 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Nanti kita akan tambahkan Login ke DigitalOcean di sini
       - name: Build and Test Image
         run: |
           docker build -t uanggue-prod:latest .
           docker run --rm uanggue-prod:latest php artisan --version
+
+      - name: Log in to DigitalOcean Container Registry
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_TOKEN }}
+
+      - name: Push image to DigitalOcean Container Registry
+        run: |
+          docker tag uanggue-prod:latest registry.digitalocean.com/uangku-registry/api:latest
+          docker push registry.digitalocean.com/uangku-registry/api:latest
+
+      - name: Copy docker-compose.prod.yml to Server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-compose.prod.yml"
+          target: "/root/uang-gue/"
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /root/uang-gue
+            # Login ke registry di sisi server agar bisa pull image
+            echo ${{ secrets.DIGITALOCEAN_TOKEN }} | docker login registry.digitalocean.com -u ${{ secrets.DIGITALOCEAN_TOKEN }} --password-stdin
+            
+            # Tarik image terbaru berdasarkan blueprint .yml
+            docker compose -f docker-compose.prod.yml pull
+            
+            # Jalankan/restart container
+            docker compose -f docker-compose.prod.yml up -d
+            
+            # Bersihkan image lama yang sudah gantung (dangling) agar hemat storage
+            docker image prune -f
