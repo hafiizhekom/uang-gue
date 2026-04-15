@@ -50,15 +50,13 @@ jobs:
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            set -e
             cd /root/uang-gue
-            # Login ke registry di sisi server agar bisa pull image
+
+            export DOCKER_IMAGE_NAME=registry.digitalocean.com/uang-gue-registry/api
+
             echo ${{ secrets.DIGITALOCEAN_TOKEN }} | docker login registry.digitalocean.com -u ${{ secrets.DIGITALOCEAN_TOKEN }} --password-stdin
             
-            # Tarik image terbaru berdasarkan blueprint .yml
             docker compose -f docker-compose.prod.yml pull
-            
-            # Jalankan/restart container
             docker compose -f docker-compose.prod.yml up -d
-            
-            # Bersihkan image lama yang sudah gantung (dangling) agar hemat storage
             docker image prune -f
