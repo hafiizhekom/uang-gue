@@ -1,6 +1,5 @@
 services:
   app:
-    # Nama image nanti kita buat dinamis dari GitHub Actions
     image: ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG:-latest}
     restart: always
     environment:
@@ -13,23 +12,15 @@ services:
       DB_DATABASE: ${DB_DATABASE}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
+      # Konfigurasi FrankenPHP
+      SERVER_NAME: :80
     volumes:
+      # Kita cuma butuh volume buat storage (log/upload) biar gak ilang pas container update
       - storage_data:/var/www/html/storage
     networks:
       - uangku-network
-
-  nginx:
-    image: nginx:stable-alpine
-    restart: always
-    ports:
-      - "80:80"  # Membuka gerbang dunia luar (80) ke Nginx
-    volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./:/var/www/html:ro # Agar Nginx bisa baca file statis (CSS/JS)
-    networks:
-      - uangku-network
     depends_on:
-      - app
+      - mysql
 
   mysql:
     image: mariadb:10.6
