@@ -1,50 +1,23 @@
-# STAGE 1: Install Dependency (The "Cook")
-FROM php:8.3-fpm-alpine AS builder
+FROM dunglas/frankenphp:1.1-php8.2-alpine
 
-# Install system dependencies
-RUN apk add --no-cache \
+RUN install-php-extensions \
+    pcntl \
+    pdo_mysql \
+    gd \
+    intl \
     zip \
-    libzip-dev \
-    libpng-dev \
-    oniguruma-dev \
-    icu-dev
-
-# Install PHP extensions
-RUN docker-php-ext-install pdo_mysql zip gd intl
-
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-WORKDIR /app
-COPY . .
-
-# Install dependencies & optimize
-RUN composer install --no-dev --optimize-autoloader --no-scripts
-
-RUN php artisan package:discover --ansi
-
-# ---------------------------------------------------------
-
-# STAGE 2: Production Image (The "Box")
-FROM php:8.3-fpm-alpine
+    opcache \
+    bcmath
 
 WORKDIR /var/www/html
 
-# Copy extensions dari builder
-RUN apk add --no-cache \
-    libzip \
-    libpng \
-    icu-libs
+COPY . .
 
-RUN docker-php-ext-install pdo_mysql
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+RUN composer install --no-dev --optimize-autoloader --no-scripts
 
-# Copy kodingan dan vendor dari stage builder
-COPY --from=builder /app /var/www/html
-
-# Set Permission (Sesuai kebutuhan Laravel)
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Expose port fpm
-EXPOSE 9000
+EXPOSE 80
 
-CMD ["php-fpm"]
+CMD ["frankenphp", "php-server", "--listen", ":80"]

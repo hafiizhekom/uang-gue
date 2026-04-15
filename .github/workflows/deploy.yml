@@ -2,7 +2,7 @@ name: Build and Push to Registry
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main ] # Pastikan branch ini sesuai dengan branch prod lo
 
 jobs:
   build-and-push:
@@ -19,6 +19,7 @@ jobs:
       - name: Build and Test Image
         run: |
           docker build -t uanggue-prod:latest .
+          # Test apakah PHP jalan di dalam image
           docker run --rm uanggue-prod:latest php artisan --version
 
       - name: Log in to DigitalOcean Container Registry
@@ -53,10 +54,17 @@ jobs:
             set -e
             cd /root/uang-gue
 
+            # Definisiin nama image buat Docker Compose
             export DOCKER_IMAGE_NAME=registry.digitalocean.com/uang-gue-registry/api
 
+            # Login registry di server agar bisa tarik image terbaru
             echo ${{ secrets.DIGITALOCEAN_TOKEN }} | docker login registry.digitalocean.com -u ${{ secrets.DIGITALOCEAN_TOKEN }} --password-stdin
             
+            # Tarik "kaleng" aplikasi terbaru
             docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d
+            
+            # Jalankan aplikasi. --force-recreate memastikan container lama diganti yang baru.
+            docker compose -f docker-compose.prod.yml up -d --force-recreate
+            
+            # Cleanup image lama biar storage droplet gak penuh
             docker image prune -f
