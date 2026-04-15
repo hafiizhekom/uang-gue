@@ -12,10 +12,13 @@ services:
       DB_DATABASE: ${DB_DATABASE}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
-      # Konfigurasi FrankenPHP
+      DOCUMENT_ROOT: "/var/www/html/public"
       SERVER_NAME: :80
+    command: ["frankenphp", "php-server", "--listen", ":80", "--root", "/var/www/html/public"]
+    ports:
+      - "80:80"
+      - "443:443"
     volumes:
-      # Kita cuma butuh volume buat storage (log/upload) biar gak ilang pas container update
       - storage_data:/var/www/html/storage
     networks:
       - uangku-network
