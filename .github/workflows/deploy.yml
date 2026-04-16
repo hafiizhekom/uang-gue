@@ -35,13 +35,13 @@ jobs:
           docker tag uanggue-prod:latest registry.digitalocean.com/uang-gue-registry/api:latest
           docker push registry.digitalocean.com/uang-gue-registry/api:latest
 
-      - name: Copy docker-compose.prod.yml to Server
+      - name: Copy compose.prod.yml to Server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_IP }}
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker-compose.prod.yml"
+          source: "compose.prod.yml"
           target: "/root/uang-gue/"
 
       - name: Deploy via SSH
@@ -61,10 +61,10 @@ jobs:
             echo ${{ secrets.DIGITALOCEAN_TOKEN }} | docker login registry.digitalocean.com -u ${{ secrets.DIGITALOCEAN_TOKEN }} --password-stdin
             
             # Tarik "kaleng" aplikasi terbaru
-            docker compose -f docker-compose.prod.yml pull
+            docker compose -f compose.prod.yml pull
             
             # Jalankan aplikasi. --force-recreate memastikan container lama diganti yang baru.
-            docker compose -f docker-compose.prod.yml up -d --force-recreate
+            docker compose -f compose.prod.yml up -d --force-recreate
             
             # Cleanup image lama biar storage droplet gak penuh
             docker image prune -f

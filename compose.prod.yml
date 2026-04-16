@@ -2,16 +2,9 @@ services:
   app:
     image: ${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG:-latest}
     restart: always
+    env_file:
+      - .env
     environment:
-      APP_ENV: production
-      APP_DEBUG: false
-      APP_KEY: ${APP_KEY}
-      DB_CONNECTION: mysql
-      DB_HOST: mysql
-      DB_PORT: 3306
-      DB_DATABASE: ${DB_DATABASE}
-      DB_USERNAME: ${DB_USERNAME}
-      DB_PASSWORD: ${DB_PASSWORD}
       DOCUMENT_ROOT: "/var/www/html/public"
       SERVER_NAME: :80
     command: ["frankenphp", "php-server", "--listen", ":80", "--root", "/var/www/html/public"]
