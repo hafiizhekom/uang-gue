@@ -5,14 +5,23 @@ services:
     env_file:
       - .env
     environment:
+      SERVER_NAME: "api.uanggue.my.id"
       DOCUMENT_ROOT: "/var/www/html/public"
-      SERVER_NAME: :80
-    command: ["frankenphp", "php-server", "--listen", ":80", "--root", "/var/www/html/public"]
+    command: ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]
     ports:
       - "80:80"
       - "443:443"
+      - "443:443/udp"
     volumes:
       - storage_data:/var/www/html/storage
+      - caddy_data:/data
+      - caddy_config:/config
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/up"] # Cek ke endpoint /up Laravel atau root /
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     networks:
       - uangku-network
     depends_on:
@@ -38,3 +47,5 @@ networks:
 volumes:
   storage_data:
   db_data:
+  caddy_data:
+  caddy_config:
