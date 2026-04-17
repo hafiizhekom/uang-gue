@@ -7,7 +7,8 @@ RUN install-php-extensions \
     intl \
     zip \
     opcache \
-    bcmath
+    bcmath \
+    redis
 
 WORKDIR /var/www/html
 
