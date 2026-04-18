@@ -3,7 +3,7 @@
 namespace App\Traits;
 
 use Illuminate\Support\Facades\Cache;
-
+use Illuminate\Support\Facades\Redis;
 trait ClearDashboardCache
 {
     protected function refreshDashboard($userId, $periodId = null)
