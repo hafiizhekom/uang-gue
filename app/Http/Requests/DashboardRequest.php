@@ -49,6 +49,6 @@ class DashboardRequest extends FormRequest
             );
         }
 
-        $this->merge(['active_period_object' => $period]);
+        $this->merge(['active_period' => $period]);
     }
 }

@@ -17,7 +17,7 @@ class OutcomeResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->title,
-            'total_amount' => (float) $this->amount,
+            'amount' => (float) $this->amount,
             'has_detail' => (bool) $this->has_detail,
             'details' => OutcomeDetailResource::collection($this->whenLoaded('details')),
             'category' => $this->whenLoaded('category', 
