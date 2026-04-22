@@ -17,7 +17,8 @@ class DashboardController extends Controller
         $userId = auth()->id();
         $period = $request->active_period;
 
-        $cacheKey = "dashboard_user_{$userId}_period_{$period}";
+        // $cacheKey = "dashboard_user_{$userId}_period_{$period}";
+        $cacheKey = "dashboard_user_{$userId}";
         $data = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($period, $userId) {
             $last_period_balance = $period ? $this->last_period_balance($period, $userId) : [
                 'monthlyIncome' => 0,

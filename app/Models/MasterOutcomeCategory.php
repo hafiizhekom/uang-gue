@@ -7,7 +7,10 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Observers\MasterOutcomeCategoryObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 
+#[ObservedBy(MasterOutcomeCategoryObserver::class)]
 class MasterOutcomeCategory extends Model
 {
     /** @use HasFactory<\Database\Factories\MasterOutcomeCategoryFactory> */
