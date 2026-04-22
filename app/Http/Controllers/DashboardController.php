@@ -144,17 +144,25 @@ class DashboardController extends Controller
     private function last_period_trend($period)
     {
         $dailyIncome = Income::where('master_period_id', $period->id)
-        ->select(\DB::raw('DATE(date) as transaction_date'), \DB::raw('SUM(amount) as total'))
-        ->groupBy('transaction_date')
-        ->orderBy('transaction_date')
-        ->pluck('total', 'transaction_date'); // Pluck biar gampang dicari (key = date, value = total)
-
-        // 2. Ambil data Outcome Harian (SUM amount by date)
-        // Ingat, kita SUM outcome utamanya (yang punya total), bukan detailnya
-        $dailyOutcome = Outcome::where('master_period_id', $period->id)
             ->select(\DB::raw('DATE(date) as transaction_date'), \DB::raw('SUM(amount) as total'))
             ->groupBy('transaction_date')
-            ->orderBy('transaction_date')
+            ->pluck('total', 'transaction_date');
+
+        $outcomeFromDetails = \DB::table('outcome_details')
+            ->join('outcomes', 'outcome_details.outcome_id', '=', 'outcomes.id')
+            ->where('outcomes.master_period_id', $period->id)
+            ->select(\DB::raw('DATE(outcome_details.date) as transaction_date'), \DB::raw('SUM(outcome_details.amount) as total'))
+            ->groupBy('transaction_date')
+            ->pluck('total', 'transaction_date');
+
+        $outcomeFromParentOnly = Outcome::where('master_period_id', $period->id)
+            ->whereNotExists(function ($query) {
+                $query->select(\DB::raw(1))
+                    ->from('outcome_details')
+                    ->whereRaw('outcome_details.outcome_id = outcomes.id');
+            })
+            ->select(\DB::raw('DATE(date) as transaction_date'), \DB::raw('SUM(amount) as total'))
+            ->groupBy('transaction_date')
             ->pluck('total', 'transaction_date');
 
         $startDate = \Carbon\Carbon::parse($period->start_date);
@@ -164,13 +172,15 @@ class DashboardController extends Controller
         while ($startDate->lte($endDate)) {
             $dateStr = $startDate->toDateString();
             
+            $totalDailyOutcome = ($outcomeFromDetails[$dateStr] ?? 0) + ($outcomeFromParentOnly[$dateStr] ?? 0);
+
             $trendData[] = [
-                'date'          => $startDate->format('Y-m-d'),
+                'date'          => $dateStr,
                 'income_total'  => (float) ($dailyIncome[$dateStr] ?? 0),
-                'outcome_total' => (float) ($dailyOutcome[$dateStr] ?? 0),
+                'outcome_total' => (float) $totalDailyOutcome,
             ];
             
-            $startDate->addDay(); // Lanjut ke hari berikutnya
+            $startDate->addDay();
         }
 
         return $trendData;
