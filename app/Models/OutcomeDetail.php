@@ -8,7 +8,10 @@ use App\Models\Outcome;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Observers\OutcomeDetailObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 
+#[ObservedBy(OutcomeDetailObserver::class)]
 class OutcomeDetail extends Model
 {
     /** @use HasFactory<\Database\Factories\OutcomeDetailFactory> */

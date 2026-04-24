@@ -17,7 +17,8 @@ class DashboardController extends Controller
         $userId = auth()->id();
         $period = $request->active_period;
 
-        $cacheKey = "dashboard_user_{$userId}_period_{$period}";
+        // $cacheKey = "dashboard_user_{$userId}_period_{$period}";
+        $cacheKey = "dashboard_user_{$userId}";
         $data = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($period, $userId) {
             $last_period_balance = $period ? $this->last_period_balance($period, $userId) : [
                 'monthlyIncome' => 0,
@@ -100,37 +101,44 @@ class DashboardController extends Controller
     {
         $formatData = fn($collection) => $collection->map(fn($item) => [
             'name' => $item->name,
-            'total' => (float) $item->total, // Paksa jadi float di sini
+            'total' => (float) $item->total,
         ]);
         
-        // Section Last Period Chart Data
-        $byCategory = Outcome::where('master_period_id', $period->id)
-        ->join('master_outcome_categories', 'outcomes.master_outcome_category_id', '=', 'master_outcome_categories.id')
-        ->select('master_outcome_categories.name', \DB::raw('SUM(outcomes.amount) as total'))
-        ->groupBy('master_outcome_categories.name')
-        ->get();
+        // 1. Chart by Category
+        $byCategory = Outcome::where('outcomes.master_period_id', $period->id)
+            ->join('master_outcome_categories', 'outcomes.master_outcome_category_id', '=', 'master_outcome_categories.id')
+            ->whereNull('master_outcome_categories.deleted_at') // Filter kategori yang sudah dihapus
+            ->select('master_outcome_categories.name', \DB::raw('SUM(outcomes.amount) as total'))
+            ->groupBy('master_outcome_categories.name')
+            ->get();
 
-        $byType = Outcome::where('master_period_id', $period->id)
+        // 2. Chart by Type
+        $byType = Outcome::where('outcomes.master_period_id', $period->id)
             ->join('master_outcome_types', 'outcomes.master_outcome_type_id', '=', 'master_outcome_types.id')
+            ->whereNull('master_outcome_types.deleted_at') // Filter tipe yang sudah dihapus
             ->select('master_outcome_types.name', \DB::raw('SUM(outcomes.amount) as total'))
             ->groupBy('master_outcome_types.name')
             ->get();
 
+        // 3. Chart by Tags
         $byTags = \DB::table('master_outcome_detail_tags')
-        ->join('outcome_detail_tag', 'master_outcome_detail_tags.id', '=', 'outcome_detail_tag.master_outcome_detail_tag_id')
-        ->join('outcome_details', 'outcome_detail_tag.outcome_detail_id', '=', 'outcome_details.id')
-        ->join('outcomes', 'outcome_details.outcome_id', '=', 'outcomes.id')
-        ->where('outcomes.master_period_id', $period->id)
-        ->where('master_outcome_detail_tags.user_id', $userId)
-        ->select('master_outcome_detail_tags.name', \DB::raw('SUM(outcome_details.amount) as total'))
-        ->groupBy('master_outcome_detail_tags.name')
-        ->get();
+            ->join('outcome_detail_tag', 'master_outcome_detail_tags.id', '=', 'outcome_detail_tag.master_outcome_detail_tag_id')
+            ->join('outcome_details', 'outcome_detail_tag.outcome_detail_id', '=', 'outcome_details.id')
+            ->join('outcomes', 'outcome_details.outcome_id', '=', 'outcomes.id')
+            ->where('outcomes.master_period_id', $period->id)
+            ->where('master_outcome_detail_tags.user_id', $userId)
+            ->whereNull('master_outcome_detail_tags.deleted_at') // Filter tag yang sudah dihapus
+            ->select('master_outcome_detail_tags.name', \DB::raw('SUM(outcome_details.amount) as total'))
+            ->groupBy('master_outcome_detail_tags.name')
+            ->get();
 
-        $incomeByType = Income::where('master_period_id', $period->id)
-        ->join('master_income_types', 'incomes.master_income_type_id', '=', 'master_income_types.id')
-        ->select('master_income_types.name', \DB::raw('SUM(incomes.amount) as total'))
-        ->groupBy('master_income_types.name')
-        ->get();
+        // 4. Income by Type
+        $incomeByType = Income::where('incomes.master_period_id', $period->id)
+            ->join('master_income_types', 'incomes.master_income_type_id', '=', 'master_income_types.id')
+            ->whereNull('master_income_types.deleted_at') // Filter tipe income yang sudah dihapus
+            ->select('master_income_types.name', \DB::raw('SUM(incomes.amount) as total'))
+            ->groupBy('master_income_types.name')
+            ->get();
 
         return [
             'byCategory'   => $formatData($byCategory),
@@ -143,17 +151,25 @@ class DashboardController extends Controller
     private function last_period_trend($period)
     {
         $dailyIncome = Income::where('master_period_id', $period->id)
-        ->select(\DB::raw('DATE(date) as transaction_date'), \DB::raw('SUM(amount) as total'))
-        ->groupBy('transaction_date')
-        ->orderBy('transaction_date')
-        ->pluck('total', 'transaction_date'); // Pluck biar gampang dicari (key = date, value = total)
-
-        // 2. Ambil data Outcome Harian (SUM amount by date)
-        // Ingat, kita SUM outcome utamanya (yang punya total), bukan detailnya
-        $dailyOutcome = Outcome::where('master_period_id', $period->id)
             ->select(\DB::raw('DATE(date) as transaction_date'), \DB::raw('SUM(amount) as total'))
             ->groupBy('transaction_date')
-            ->orderBy('transaction_date')
+            ->pluck('total', 'transaction_date');
+
+        $outcomeFromDetails = \DB::table('outcome_details')
+            ->join('outcomes', 'outcome_details.outcome_id', '=', 'outcomes.id')
+            ->where('outcomes.master_period_id', $period->id)
+            ->select(\DB::raw('DATE(outcome_details.date) as transaction_date'), \DB::raw('SUM(outcome_details.amount) as total'))
+            ->groupBy('transaction_date')
+            ->pluck('total', 'transaction_date');
+
+        $outcomeFromParentOnly = Outcome::where('master_period_id', $period->id)
+            ->whereNotExists(function ($query) {
+                $query->select(\DB::raw(1))
+                    ->from('outcome_details')
+                    ->whereRaw('outcome_details.outcome_id = outcomes.id');
+            })
+            ->select(\DB::raw('DATE(date) as transaction_date'), \DB::raw('SUM(amount) as total'))
+            ->groupBy('transaction_date')
             ->pluck('total', 'transaction_date');
 
         $startDate = \Carbon\Carbon::parse($period->start_date);
@@ -163,13 +179,15 @@ class DashboardController extends Controller
         while ($startDate->lte($endDate)) {
             $dateStr = $startDate->toDateString();
             
+            $totalDailyOutcome = ($outcomeFromDetails[$dateStr] ?? 0) + ($outcomeFromParentOnly[$dateStr] ?? 0);
+
             $trendData[] = [
-                'date'          => $startDate->format('Y-m-d'),
+                'date'          => $dateStr,
                 'income_total'  => (float) ($dailyIncome[$dateStr] ?? 0),
-                'outcome_total' => (float) ($dailyOutcome[$dateStr] ?? 0),
+                'outcome_total' => (float) $totalDailyOutcome,
             ];
             
-            $startDate->addDay(); // Lanjut ke hari berikutnya
+            $startDate->addDay();
         }
 
         return $trendData;
