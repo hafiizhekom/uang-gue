@@ -9,7 +9,10 @@ use App\Models\MasterPayment;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Observers\IncomeObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 
+#[ObservedBy(IncomeObserver::class)]
 class Income extends Model
 {
     /** @use HasFactory<\Database\Factories\IncomeFactory> */

@@ -7,7 +7,10 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Observers\MasterOutcomeDetailTagObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 
+#[ObservedBy(MasterOutcomeDetailTagObserver::class)]
 class MasterOutcomeDetailTag extends Model
 {
     /** @use HasFactory<\Database\Factories\MasterOutcomeDetailTagFactory> */
