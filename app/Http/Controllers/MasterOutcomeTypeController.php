@@ -20,6 +20,7 @@ class MasterOutcomeTypeController extends Controller
             ->where('user_id', auth()->id())
             ->withCount('outcomes')
             ->latest()
+            ->get()
         );
 
         return $this->data($collection);

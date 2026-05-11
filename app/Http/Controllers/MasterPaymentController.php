@@ -22,6 +22,7 @@ class MasterPaymentController extends Controller
             ->withCount('outcome_details')
             ->withCount('incomes')
             ->latest()
+            ->get()
         );
         return $this->data($collection);
     }

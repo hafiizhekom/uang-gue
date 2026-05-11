@@ -32,6 +32,7 @@ class MasterPeriodController extends Controller implements HasMiddleware
             ->where('user_id', auth()->id())
             ->withCount(['outcomes', 'incomes'])
             ->latest()
+            ->get()
         );
 
         return $this->data($collection);
