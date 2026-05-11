@@ -24,7 +24,6 @@ class MasterOutcomeDetailTagController extends Controller
                 });
             }])
             ->latest()
-            ->cursorPaginate(10)
         );
 
         return $this->data($collection);
