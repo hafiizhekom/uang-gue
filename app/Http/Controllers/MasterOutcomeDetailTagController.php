@@ -24,6 +24,7 @@ class MasterOutcomeDetailTagController extends Controller
                 });
             }])
             ->latest()
+            ->get()
         );
 
         return $this->data($collection);

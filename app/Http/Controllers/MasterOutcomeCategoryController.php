@@ -36,6 +36,7 @@ class MasterOutcomeCategoryController extends Controller implements HasMiddlewar
             ->where('user_id', auth()->id())
             ->withCount('outcomes')
             ->latest()
+            ->get()
         );
         return $this->data($collection);
     }
