@@ -19,8 +19,8 @@ class MasterOutcomeTypeController extends Controller
             MasterOutcomeType::query()
             ->where('user_id', auth()->id())
             ->withCount('outcomes')
-            ->latest()
-            ->get()
+            ->orderBy('id', 'asc')
+            ->cursorPaginate(50)
         );
 
         return $this->data($collection);

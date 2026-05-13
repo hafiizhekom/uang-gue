@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Master\StoreUpdateOutcomeCategoryRequest;
+use App\Http\Resources\MasterCollection;
 use App\Http\Resources\MasterResource;
 use App\Models\MasterOutcomeCategory;
 use Illuminate\Http\Request;
@@ -35,8 +36,8 @@ class MasterOutcomeCategoryController extends Controller implements HasMiddlewar
             MasterOutcomeCategory::query()
             ->where('user_id', auth()->id())
             ->withCount('outcomes')
-            ->latest()
-            ->get()
+            ->orderBy('id', 'asc')
+            ->cursorPaginate(50)
         );
         return $this->data($collection);
     }
