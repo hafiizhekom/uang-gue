@@ -65,6 +65,9 @@ jobs:
             
             # Jalankan aplikasi. --force-recreate memastikan container lama diganti yang baru.
             docker compose -f compose.prod.yml up -d --force-recreate
+
+            # Jalankan migrate setelah container up
+            docker compose -f compose.prod.yml exec -T app php artisan migrate --force
             
             # Cleanup image lama biar storage droplet gak penuh
             docker image prune -f
