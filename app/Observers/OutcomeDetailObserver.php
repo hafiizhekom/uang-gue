@@ -15,6 +15,21 @@ class OutcomeDetailObserver
     public function created(OutcomeDetail $outcome_detail): void
     {
         //
+        activity('outcome_detail')
+        ->causedBy(auth()->user())
+        ->performedOn($outcome_detail)
+        ->withProperties([
+            'action' => 'Add Outcome Detail',
+            'period' => $outcome_detail->outcome && $outcome_detail->outcome->period ? $outcome_detail->outcome->period->name : null,
+            'parent' => $outcome_detail->outcome ? $outcome_detail->outcome->title : null,
+            'title' => $outcome_detail->title,
+            'payment' => $outcome_detail->payment ? $outcome_detail->payment->name : null,
+            'amount' => $outcome_detail->amount,
+            'note'   => $outcome_detail->note,
+            'date'   => $outcome_detail->date,
+        ])
+        ->log('created');
+        
         Log::channel('observer')->info("Data Created via Observer", [
             'model'   => 'OutcomeDetail',
             'id'      => $outcome_detail->id,
@@ -30,6 +45,16 @@ class OutcomeDetailObserver
     public function updated(OutcomeDetail $outcome_detail): void
     {
         //
+        activity('outcome_detail')
+        ->causedBy(auth()->user())
+        ->performedOn($outcome_detail)
+        ->withProperties([
+            'action' => 'Update Outcome Detail',
+            'before' => $outcome_detail->getOriginal(),
+            'after'  => $outcome_detail->getChanges(),
+        ])
+        ->log('updated');
+
         Log::channel('observer')->info("Data Updated via Observer", [
             'model'   => 'OutcomeDetail',
             'id'      => $outcome_detail->id,
@@ -45,6 +70,21 @@ class OutcomeDetailObserver
     public function deleted(OutcomeDetail $outcome_detail): void
     {
         //
+        activity('outcome_detail')
+        ->causedBy(auth()->user())
+        ->performedOn($outcome_detail)
+        ->withProperties([
+            'action' => 'Delete Outcome Detail',
+            'period' => $outcome_detail->outcome && $outcome_detail->outcome->period ? $outcome_detail->outcome->period->name : null,
+            'parent' => $outcome_detail->outcome ? $outcome_detail->outcome->title : null,
+            'title' => $outcome_detail->title,
+            'payment' => $outcome_detail->payment ? $outcome_detail->payment->name : null,
+            'amount' => $outcome_detail->amount,
+            'note'   => $outcome_detail->note,
+            'date'   => $outcome_detail->date,
+        ])
+        ->log('deleted');
+        
         Log::channel('observer')->info("Data Deleted via Observer", [
             'model'   => 'OutcomeDetail',
             'id'      => $outcome_detail->id,
@@ -60,6 +100,21 @@ class OutcomeDetailObserver
     public function restored(OutcomeDetail $outcome_detail): void
     {
         //
+        activity('outcome_detail')
+        ->causedBy(auth()->user())
+        ->performedOn($outcome_detail)
+        ->withProperties([
+            'action' => 'Restore Outcome Detail',
+            'period' => $outcome_detail->outcome && $outcome_detail->outcome->period ? $outcome_detail->outcome->period->name : null,
+            'parent' => $outcome_detail->outcome ? $outcome_detail->outcome->title : null,
+            'title' => $outcome_detail->title,
+            'payment' => $outcome_detail->payment ? $outcome_detail->payment->name : null,
+            'amount' => $outcome_detail->amount,
+            'note'   => $outcome_detail->note,
+            'date'   => $outcome_detail->date,
+        ])
+        ->log('restored');
+
         Log::channel('observer')->info("Data Restored via Observer", [
             'model'   => 'OutcomeDetail',
             'id'      => $outcome_detail->id,
@@ -75,6 +130,21 @@ class OutcomeDetailObserver
     public function forceDeleted(OutcomeDetail $outcome_detail): void
     {
         //
+        activity('outcome_detail')
+        ->causedBy(auth()->user())
+        ->performedOn($outcome_detail)
+        ->withProperties([
+            'action' => 'Permanently Deleted Outcome Detail',
+            'period' => $outcome_detail->outcome && $outcome_detail->outcome->period ? $outcome_detail->outcome->period->name : null,
+            'parent' => $outcome_detail->outcome ? $outcome_detail->outcome->title : null,
+            'title' => $outcome_detail->title,
+            'payment' => $outcome_detail->payment ? $outcome_detail->payment->name : null,
+            'amount' => $outcome_detail->amount,
+            'note'   => $outcome_detail->note,
+            'date'   => $outcome_detail->date,
+        ])
+        ->log('force_deleted');
+        
         Log::channel('observer')->info("Data Force Deleted via Observer", [
             'model'   => 'OutcomeDetail',
             'id'      => $outcome_detail->id,

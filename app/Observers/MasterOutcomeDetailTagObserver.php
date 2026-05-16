@@ -15,6 +15,15 @@ class MasterOutcomeDetailTagObserver
     public function created(MasterOutcomeDetailTag $masterOutcomeDetailTag): void
     {
         //
+        activity('master_outcome_detail_tag')
+        ->causedBy(auth()->user())
+        ->performedOn($masterOutcomeDetailTag)
+        ->withProperties([
+            'action' => 'Add Outcome Detail Tag',
+            'name'   => $masterOutcomeDetailTag->name,
+        ])
+        ->log('created');
+        
         Log::channel('observer')->info("Data Created via Observer", [
             'model'   => 'MasterOutcomeDetailTag',
             'id'      => $masterOutcomeDetailTag->id,
@@ -30,6 +39,16 @@ class MasterOutcomeDetailTagObserver
     public function updated(MasterOutcomeDetailTag $masterOutcomeDetailTag): void
     {
         //
+        activity('master_outcome_detail_tag')
+        ->causedBy(auth()->user())
+        ->performedOn($masterOutcomeDetailTag)
+        ->withProperties([
+            'action' => 'Update Outcome Detail Tag',
+            'before' => $masterOutcomeDetailTag->getOriginal(),
+            'after'  => $masterOutcomeDetailTag->getChanges(),
+        ])
+        ->log('updated');
+        
         Log::channel('observer')->info("Data Updated via Observer", [
             'model'   => 'MasterOutcomeDetailTag',
             'id'      => $masterOutcomeDetailTag->id,
@@ -45,6 +64,16 @@ class MasterOutcomeDetailTagObserver
     public function deleted(MasterOutcomeDetailTag $masterOutcomeDetailTag): void
     {
         //
+        activity('master_outcome_detail_tag')
+        ->causedBy(auth()->user())
+        ->performedOn($masterOutcomeDetailTag)
+        ->withProperties([
+            'action' => 'Delete Outcome Detail Tag',
+            'name'   => $masterOutcomeDetailTag->name,
+        ])
+        ->log('deleted');
+
+        
         Log::channel('observer')->info("Data Deleted via Observer", [
             'model'   => 'MasterOutcomeDetailTag',
             'id'      => $masterOutcomeDetailTag->id,
@@ -60,6 +89,15 @@ class MasterOutcomeDetailTagObserver
     public function restored(MasterOutcomeDetailTag $masterOutcomeDetailTag): void
     {
         //
+        activity('master_outcome_detail_tag')
+        ->causedBy(auth()->user())
+        ->performedOn($masterOutcomeDetailTag)
+        ->withProperties([
+            'action' => 'Restore Outcome Detail Tag',
+            'name'   => $masterOutcomeDetailTag->name,
+        ])
+        ->log('restored');
+        
         Log::channel('observer')->info("Data Restored via Observer", [
             'model'   => 'MasterOutcomeDetailTag',
             'id'      => $masterOutcomeDetailTag->id,
@@ -75,6 +113,15 @@ class MasterOutcomeDetailTagObserver
     public function forceDeleted(MasterOutcomeDetailTag $masterOutcomeDetailTag): void
     {
         //
+        activity('master_outcome_detail_tag')
+        ->causedBy(auth()->user())
+        ->performedOn($masterOutcomeDetailTag)
+        ->withProperties([
+            'action' => 'Permanently Deleted Outcome Detail Tag',
+            'name'   => $masterOutcomeDetailTag->name,
+        ])
+        ->log('force_deleted');
+        
         Log::channel('observer')->info("Data Force Deleted via Observer", [
             'model'   => 'MasterOutcomeDetailTag',
             'id'      => $masterOutcomeDetailTag->id,

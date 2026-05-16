@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\IndexIncomeRequest;
 use App\Http\Requests\StoreUpdateIncomeRequest;
 use App\Http\Resources\IncomeResource;
-use App\Http\Resources\MasterResource;
 use App\Models\Income;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
