@@ -15,6 +15,18 @@ class IncomeObserver
     public function created(Income $income): void
     {
         //
+        activity('income')
+        ->causedBy(auth()->user())
+        ->performedOn($income)
+        ->withProperties([
+            'action'  => 'Add Income',
+            'amount'  => $income->amount,
+            'title'   => $income->title,
+            'date'    => $income->date,
+            'note'    => $income->note,
+        ])
+        ->log('created');
+        
         Log::channel('observer')->info("Data Created via Observer", [
             'model'   => 'Income',
             'id'      => $income->id,
@@ -30,6 +42,17 @@ class IncomeObserver
     public function updated(Income $income): void
     {
         //
+        activity('income')
+        ->causedBy(auth()->user())
+        ->performedOn($income)
+        ->withProperties([
+            'action' => 'Update Income',
+            'amount' => $income->amount,
+            'before' => $income->getOriginal(), // data sebelum diubah
+            'after'  => $income->getChanges(),  // data setelah diubah
+        ])
+        ->log('updated');
+
         Log::channel('observer')->info("Data Updated via Observer", [
             'model'   => 'Income',
             'id'      => $income->id,
@@ -45,6 +68,16 @@ class IncomeObserver
     public function deleted(Income $income): void
     {
         //
+        activity('income')
+        ->causedBy(auth()->user())
+        ->performedOn($income)
+        ->withProperties([
+            'action' => 'Delete Income',
+            'amount' => $income->amount,
+            'title'  => $income->title,
+        ])
+        ->log('deleted');
+
         Log::channel('observer')->info("Data Deleted via Observer", [
             'model'   => 'Income',
             'id'      => $income->id,
@@ -60,6 +93,16 @@ class IncomeObserver
     public function restored(Income $income): void
     {
         //
+        activity('income')
+        ->causedBy(auth()->user())
+        ->performedOn($income)
+        ->withProperties([
+            'action' => 'Restore Income',
+            'amount' => $income->amount,
+            'title'  => $income->title,
+        ])
+        ->log('restored');
+
         Log::channel('observer')->info("Data Restored via Observer", [
             'model'   => 'Income',
             'id'      => $income->id,
@@ -75,6 +118,16 @@ class IncomeObserver
     public function forceDeleted(Income $income): void
     {
         //
+        activity('income')
+        ->causedBy(auth()->user())
+        ->performedOn($income)
+        ->withProperties([
+            'action' => 'Permanently Deleted Income',
+            'amount' => $income->amount,
+            'title'  => $income->title,
+        ])
+        ->log('force_deleted');
+
         Log::channel('observer')->info("Data Force Deleted via Observer", [
             'model'   => 'Income',
             'id'      => $income->id,

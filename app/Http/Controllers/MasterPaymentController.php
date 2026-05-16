@@ -21,8 +21,8 @@ class MasterPaymentController extends Controller
             ->withCount('outcomes')
             ->withCount('outcome_details')
             ->withCount('incomes')
-            ->latest()
-            ->get()
+            ->orderBy('id', 'asc')
+            ->cursorPaginate(50)
         );
         return $this->data($collection);
     }

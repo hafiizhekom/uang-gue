@@ -15,6 +15,15 @@ class MasterOutcomeCategoryObserver
     public function created(MasterOutcomeCategory $masterOutcomeCategory): void
     {
         //
+        activity('master_outcome_category')
+        ->causedBy(auth()->user())
+        ->performedOn($masterOutcomeCategory)
+        ->withProperties([
+            'action' => 'Add Outcome Category',
+            'name'   => $masterOutcomeCategory->name,
+        ])
+        ->log('created');
+        
         Log::channel('observer')->info("Data Created via Observer", [
             'model'   => 'MasterOutcomeCategory',
             'id'      => $masterOutcomeCategory->id,
@@ -29,6 +38,16 @@ class MasterOutcomeCategoryObserver
     public function updated(MasterOutcomeCategory $masterOutcomeCategory): void
     {
         //
+        activity('master_outcome_category')
+        ->causedBy(auth()->user())
+        ->performedOn($masterOutcomeCategory)
+        ->withProperties([
+            'action' => 'Update Outcome Category',
+            'before' => $masterOutcomeCategory->getOriginal(),
+            'after'  => $masterOutcomeCategory->getChanges(),
+        ])
+        ->log('updated');
+        
         Log::channel('observer')->info("Data Updated via Observer", [
             'model'   => 'MasterOutcomeCategory',
             'id'      => $masterOutcomeCategory->id,
@@ -43,6 +62,15 @@ class MasterOutcomeCategoryObserver
     public function deleted(MasterOutcomeCategory $masterOutcomeCategory): void
     {
         //
+        activity('master_outcome_category')
+        ->causedBy(auth()->user())
+        ->performedOn($masterOutcomeCategory)
+        ->withProperties([
+            'action' => 'Delete Outcome Category',
+            'name'   => $masterOutcomeCategory->name,
+        ])
+        ->log('deleted');
+        
         Log::channel('observer')->info("Data Deleted via Observer", [
             'model'   => 'MasterOutcomeCategory',
             'id'      => $masterOutcomeCategory->id,
@@ -57,6 +85,15 @@ class MasterOutcomeCategoryObserver
     public function restored(MasterOutcomeCategory $masterOutcomeCategory): void
     {
         //
+        activity('master_outcome_category')
+        ->causedBy(auth()->user())
+        ->performedOn($masterOutcomeCategory)
+        ->withProperties([
+            'action' => 'Restore Outcome Category',
+            'name'   => $masterOutcomeCategory->name,
+        ])
+        ->log('restored');
+        
         Log::channel('observer')->info("Data Restored via Observer", [
             'model'   => 'MasterOutcomeCategory',
             'id'      => $masterOutcomeCategory->id,
@@ -72,6 +109,15 @@ class MasterOutcomeCategoryObserver
     public function forceDeleted(MasterOutcomeCategory $masterOutcomeCategory): void
     {
         //
+        activity('master_outcome_category')
+        ->causedBy(auth()->user())
+        ->performedOn($masterOutcomeCategory)
+        ->withProperties([
+            'action' => 'Permanently Deleted Outcome Category',
+            'name'   => $masterOutcomeCategory->name,
+        ])
+        ->log('force_deleted');
+        
         Log::channel('observer')->info("Data Force Deleted via Observer", [
             'model'   => 'MasterOutcomeCategory',
             'id'      => $masterOutcomeCategory->id,

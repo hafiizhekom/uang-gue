@@ -30,8 +30,8 @@ class MasterIncomeTypeController extends Controller implements HasMiddleware
             MasterIncomeType::query()
             ->where('user_id', auth()->id())
             ->withCount('incomes')
-            ->latest()
-            ->get()
+            ->orderBy('id', 'asc')
+            ->cursorPaginate(50)
         );
 
         return $this->data($collection);

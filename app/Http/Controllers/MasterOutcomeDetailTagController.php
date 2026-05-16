@@ -23,8 +23,8 @@ class MasterOutcomeDetailTagController extends Controller
                     $q->whereNull('deleted_at');
                 });
             }])
-            ->latest()
-            ->get()
+            ->orderBy('id', 'asc')
+            ->cursorPaginate(50)
         );
 
         return $this->data($collection);

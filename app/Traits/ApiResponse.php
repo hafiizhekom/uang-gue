@@ -1,5 +1,6 @@
 <?php
 namespace App\Traits;
+use Illuminate\Http\Resources\Json\ResourceCollection;
 
 trait ApiResponse {
     protected function success($data, $message = null, $code = 200) {
@@ -11,6 +12,13 @@ trait ApiResponse {
     }
 
     protected function data($data, $message = null, $code = 200) {
+        if ($data instanceof ResourceCollection) {
+            return $data->additional([
+                'status' => 'Success',
+            ])->response()->setStatusCode($code);
+        }
+
+
         return response()->json([
             'status'  => 'Success',
             'data'    => $data

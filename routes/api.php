@@ -11,6 +11,7 @@ use App\Http\Controllers\MasterPeriodController;
 use App\Http\Controllers\OutcomeController;
 use App\Http\Controllers\OutcomeDetailController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ActivityLogController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -46,6 +47,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('outcome-details', OutcomeDetailController::class)->except(['show']);
     // Route::apiResource('outcome-details', OutcomeDetailController::class)->except(['index', 'store']);
     // Route::post('outcomes/{outcome_id}/details', [OutcomeDetailController::class, 'store']); // Create detail buat parent tertentu
+
+    Route::get('/activity-logs', [ActivityLogController::class, 'index']);
 
     // --- DASHBOARD ---
     Route::get('/dashboard', [DashboardController::class, 'index']);
