@@ -36,7 +36,7 @@ class IncomeResource extends JsonResource
                 }
             ),
             'note' => $this->note,
-            'date' => $this->date,
+            'date' => $this->date->format('d-m-Y'),
             'created_at' => $this->created_at->format('d-m-Y'),
         ];
     }
