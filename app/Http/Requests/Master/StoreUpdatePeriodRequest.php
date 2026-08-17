@@ -42,6 +42,11 @@ class StoreUpdatePeriodRequest extends FormRequest
                 'date',
                 'after_or_equal:start_date',
             ],
+            'opening_balance' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
         ];
 
         if (!$id) {
