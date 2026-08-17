@@ -37,6 +37,7 @@ class DashboardController extends Controller
             return [
                 // Section Last Period Balance
                 'total_wallet_amount' => (float) ($last_period_balance['totalWalletAmount'] ?? 0),
+                'opening_balance'     => (float) ($last_period_balance['openingBalance'] ?? 0),
                 'monthly_income'      => $last_period_balance['monthlyIncome'],
                 'monthly_outcome'     => $last_period_balance['monthlyOutcome'],
                 'net_savings'         => $last_period_balance['netSavings'],
@@ -84,8 +85,10 @@ class DashboardController extends Controller
         $totalWalletAmount = MasterPayment::where('user_id', $userId)->sum('balance');
         $monthlyIncome = $period ? (float) Income::where('master_period_id', $period->id)->sum('amount') : 0;
         $monthlyOutcome = $period ? (float) Outcome::where('master_period_id', $period->id)->sum('amount') : 0;
+        $openingBalance = (float) $period->opening_balance;
 
-        $netSavings = $monthlyIncome - $monthlyOutcome;
+        // netSavings = opening balance + income - outcome
+        $netSavings = $openingBalance + $monthlyIncome - $monthlyOutcome;
 
         $status = 'balance';
         if ($totalWalletAmount > $netSavings) {
@@ -94,7 +97,7 @@ class DashboardController extends Controller
             $status = 'under'; // Saldo di wallet lebih kecil dari catatan nabung
         }
 
-        return compact('totalWalletAmount', 'monthlyIncome', 'monthlyOutcome', 'netSavings', 'status');
+        return compact('totalWalletAmount', 'monthlyIncome', 'monthlyOutcome', 'netSavings', 'status', 'openingBalance');
     }
 
     private function last_period_chart($period, $userId)
