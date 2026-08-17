@@ -32,6 +32,7 @@ class ReportController extends Controller
                 'name'       => $period->name,
                 'start_date' => $period->start_date,
                 'end_date'   => $period->end_date,
+                'opening_balance' => (float) $period->opening_balance,
             ],
 
             'balance' => $balance,
@@ -193,20 +194,38 @@ class ReportController extends Controller
         ];
     }
 
+    /**
+     * Per-period balance snapshot.
+     *
+     * - opening_balance: saldo awal period (input manual atau carry-over dari period sebelumnya)
+     * - closing_balance: saldo akhir period = opening_balance + income - outcome (posisi riil setelah period ini)
+     * - period_surplus_deficit: performa period itu sendiri (income - outcome), TANPA mempertimbangkan opening_balance.
+     *   Ini yang paling penting buat comparison table: sebuah period bisa closing_balance-nya masih positif
+     *   (karena numpang opening_balance gede dari bulan lalu) padahal sebenarnya period itu defisit
+     *   (outcome > income). net_savings/closing_balance doang gak bakal keliatan hal ini.
+     */
     private function period_balance($period, $userId)
     {
         $totalIncome  = (float) Income::where('master_period_id', $period->id)->sum('amount');
         $totalOutcome = (float) Outcome::where('master_period_id', $period->id)->sum('amount');
-        $netSavings   = $totalIncome - $totalOutcome;
+        $openingBalance = (float) $period->opening_balance;
+
+        $periodSurplusDeficit = $totalIncome - $totalOutcome;
+        $closingBalance = $openingBalance + $periodSurplusDeficit;
 
         $countTransactions = Income::where('master_period_id', $period->id)->count()
             + Outcome::where('master_period_id', $period->id)->count();
 
         return [
-            'total_income'       => $totalIncome,
-            'total_outcome'      => $totalOutcome,
-            'net_savings'        => $netSavings,
-            'count_transactions' => $countTransactions,
+            'total_income'           => $totalIncome,
+            'total_outcome'          => $totalOutcome,
+            'opening_balance'        => $openingBalance,
+            'closing_balance'        => $closingBalance,
+            'period_surplus_deficit' => $periodSurplusDeficit,
+            'is_deficit_period'      => $periodSurplusDeficit < 0,
+            // net_savings dipertahankan sebagai alias closing_balance biar konsumen lama (single-period report) gak break.
+            'net_savings'            => $closingBalance,
+            'count_transactions'     => $countTransactions,
         ];
     }
 
@@ -362,9 +381,12 @@ class ReportController extends Controller
     }
 
     /**
-     * Attaches month-over-month comparison to each period:
-     * how much outcome changed vs the previous period, and whether that's
-     * trending up (more boros) or down (more hemat).
+     * Attaches period-over-period comparison to each period:
+     * - outcome trend (existing): apakah pengeluaran naik/turun dibanding period sebelumnya
+     * - opening_balance_gap: selisih opening_balance period ini dengan closing_balance period sebelumnya.
+     *   Idealnya 0 (saldo nyambung mulus antar period). Kalau tidak 0, artinya user input manual
+     *   opening_balance yang berbeda dari carry-over otomatis (misal ada dana masuk/keluar di luar
+     *   pencatatan income/outcome — cash injection, penarikan tabungan lain, dsb).
      */
     private function range_comparison($periodStats)
     {
@@ -383,10 +405,14 @@ class ReportController extends Controller
             // 'up' = outcome-nya lebih besar dari period sebelumnya (makin boros)
             // 'down' = outcome-nya lebih kecil dari period sebelumnya (makin hemat)
 
+            $openingBalanceGap = $prev ? round($stat['opening_balance'] - $prev['closing_balance'], 2) : null;
+
             $result[] = array_merge($stat, [
                 'outcome_change_amount'  => $changeAmount,
                 'outcome_change_percent' => $changePercent,
                 'trend'                  => $trend,
+                'opening_balance_gap'    => $openingBalanceGap,
+                'opening_balance_continuous' => is_null($openingBalanceGap) ? null : (abs($openingBalanceGap) < 0.01),
             ]);
 
             $prev = $stat;
@@ -397,16 +423,30 @@ class ReportController extends Controller
 
     /**
      * Range-level summary: totals, which period was most wasteful/frugal,
-     * and the overall spending trend across the whole range.
+     * overall spending trend, and how the actual cash balance grew/shrank
+     * across the whole range (starting opening_balance -> ending closing_balance).
      */
     private function range_summary($periodStats)
     {
         $totalIncome  = $periodStats->sum('total_income');
         $totalOutcome = $periodStats->sum('total_outcome');
-        $netSavings   = $totalIncome - $totalOutcome;
+
+        $firstPeriod = $periodStats->first();
+        $lastPeriod  = $periodStats->last();
+
+        $startingBalance = $firstPeriod ? $firstPeriod['opening_balance'] : 0;
+        $endingBalance    = $lastPeriod ? $lastPeriod['closing_balance'] : 0;
+        $totalBalanceGrowth = $endingBalance - $startingBalance;
 
         $mostWasteful = $periodStats->sortByDesc('total_outcome')->first();
         $mostFrugal   = $periodStats->sortBy('total_outcome')->first();
+
+        // Period dengan performa terburuk/terbaik berdasarkan surplus/defisit MURNI (income - outcome),
+        // beda dengan most_wasteful/most_frugal yang cuma lihat besaran outcome mentah.
+        $mostDeficit = $periodStats->sortBy('period_surplus_deficit')->first();
+        $mostSurplus = $periodStats->sortByDesc('period_surplus_deficit')->first();
+
+        $deficitPeriodsCount = $periodStats->where('is_deficit_period', true)->count();
 
         // Rata-rata persentase perubahan outcome antar period berurutan.
         $changes = [];
@@ -425,15 +465,25 @@ class ReportController extends Controller
 
         return [
             'total_periods'          => $periodStats->count(),
+            'starting_balance'       => $startingBalance,
+            'ending_balance'         => $endingBalance,
+            'total_balance_growth'   => $totalBalanceGrowth,
             'total_income'           => $totalIncome,
             'total_outcome'          => $totalOutcome,
-            'net_savings'            => $netSavings,
+            'net_savings'            => $totalBalanceGrowth, // alias, konsisten sama makna closing - opening
             'avg_outcome_per_period' => $periodStats->count() > 0 ? round($totalOutcome / $periodStats->count(), 2) : 0,
+            'deficit_periods_count'  => $deficitPeriodsCount,
             'most_wasteful_period'   => $mostWasteful ? [
                 'id' => $mostWasteful['id'], 'name' => $mostWasteful['name'], 'total_outcome' => $mostWasteful['total_outcome'],
             ] : null,
             'most_frugal_period' => $mostFrugal ? [
                 'id' => $mostFrugal['id'], 'name' => $mostFrugal['name'], 'total_outcome' => $mostFrugal['total_outcome'],
+            ] : null,
+            'most_deficit_period' => $mostDeficit ? [
+                'id' => $mostDeficit['id'], 'name' => $mostDeficit['name'], 'period_surplus_deficit' => $mostDeficit['period_surplus_deficit'],
+            ] : null,
+            'most_surplus_period' => $mostSurplus ? [
+                'id' => $mostSurplus['id'], 'name' => $mostSurplus['name'], 'period_surplus_deficit' => $mostSurplus['period_surplus_deficit'],
             ] : null,
             'avg_change_percent' => is_null($avgChangePercent) ? null : round($avgChangePercent, 2),
             'overall_trend'       => $overallTrend,

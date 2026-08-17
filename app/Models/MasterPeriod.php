@@ -22,7 +22,8 @@ class MasterPeriod extends Model
         'user_id', 
         'name', 
         'start_date', 
-        'end_date'
+        'end_date',
+        'opening_balance'
     ];
 
     public function incomes() { 

@@ -23,6 +23,7 @@ class MasterPeriodObserver
             'name'   => $masterPeriod->name,
             'start_date' => $masterPeriod->start_date,
             'end_date' => $masterPeriod->end_date,
+            'opening_balance' => $masterPeriod->opening_balance,
         ])
         ->log('created');
 
@@ -74,6 +75,7 @@ class MasterPeriodObserver
             'name'   => $masterPeriod->name,
             'start_date' => $masterPeriod->start_date,
             'end_date' => $masterPeriod->end_date,
+            'opening_balance' => $masterPeriod->opening_balance,
         ])
         ->log('deleted');
         
@@ -100,6 +102,7 @@ class MasterPeriodObserver
             'name'   => $masterPeriod->name,
             'start_date' => $masterPeriod->start_date,
             'end_date' => $masterPeriod->end_date,
+            'opening_balance' => $masterPeriod->opening_balance,
         ])
         ->log('restored');
         
@@ -126,6 +129,7 @@ class MasterPeriodObserver
             'name'   => $masterPeriod->name,
             'start_date' => $masterPeriod->start_date,
             'end_date' => $masterPeriod->end_date,
+            'opening_balance' => $masterPeriod->opening_balance,
         ])
         ->log('force_deleted');
         

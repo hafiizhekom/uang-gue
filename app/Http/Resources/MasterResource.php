@@ -20,6 +20,7 @@ class MasterResource extends JsonResource
             'slug'       => $this->slug,
             
             'balance'    => $this->when(isset($this->balance), (float) $this->balance),
+            'opening_balance' => $this->when(isset($this->opening_balance), (float) $this->opening_balance),
             'start_date' => $this->when(isset($this->start_date), $this->start_date),
             'end_date'   => $this->when(isset($this->end_date), $this->end_date),
 
