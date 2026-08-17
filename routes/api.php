@@ -11,6 +11,7 @@ use App\Http\Controllers\MasterPeriodController;
 use App\Http\Controllers\OutcomeController;
 use App\Http\Controllers\OutcomeDetailController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ActivityLogController;
 use Illuminate\Support\Facades\Route;
 
@@ -52,6 +53,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // --- DASHBOARD ---
     Route::get('/dashboard', [DashboardController::class, 'index']);
+
+    // --- REPORT ---
+    Route::get('/report/{period_id}', [ReportController::class, 'index']);
+    Route::get('/report-range', [ReportController::class, 'range']);
 
     // --- AUTH & ME ---
     Route::post('/logout', [AuthController::class, 'logout']);
