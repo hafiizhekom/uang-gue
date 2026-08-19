@@ -245,6 +245,7 @@ class ReportController extends Controller
             ->join('outcomes', 'outcome_details.outcome_id', '=', 'outcomes.id')
             ->join('master_outcome_categories', 'outcomes.master_outcome_category_id', '=', 'master_outcome_categories.id')
             ->where('outcomes.master_period_id', $period->id)
+            ->whereNull('outcome_details.deleted_at')
             ->where('master_outcome_categories.is_counted', true)
             ->select(DB::raw('DATE(outcome_details.date) as transaction_date'), DB::raw('SUM(outcome_details.amount) as total'))
             ->groupBy('transaction_date')
