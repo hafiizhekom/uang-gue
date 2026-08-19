@@ -18,6 +18,7 @@ class MasterResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'slug'       => $this->slug,
+            'is_counted' => $this->when(isset($this->is_counted), (bool) $this->is_counted),
             
             'balance'    => $this->when(isset($this->balance), (float) $this->balance),
             'opening_balance' => $this->when(isset($this->opening_balance), (float) $this->opening_balance),

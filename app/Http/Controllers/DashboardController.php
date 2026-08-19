@@ -84,7 +84,7 @@ class DashboardController extends Controller
     {
         $totalWalletAmount = MasterPayment::where('user_id', $userId)->sum('balance');
         $monthlyIncome = $period ? (float) Income::where('master_period_id', $period->id)->sum('amount') : 0;
-        $monthlyOutcome = $period ? (float) Outcome::where('master_period_id', $period->id)->sum('amount') : 0;
+        $monthlyOutcome = $period ? (float) Outcome::counted()->where('master_period_id', $period->id)->sum('amount') : 0;
         $openingBalance = (float) $period->opening_balance;
 
         // netSavings = opening balance + income - outcome
@@ -110,6 +110,7 @@ class DashboardController extends Controller
         // 1. Chart by Category
         $byCategory = Outcome::where('outcomes.master_period_id', $period->id)
             ->join('master_outcome_categories', 'outcomes.master_outcome_category_id', '=', 'master_outcome_categories.id')
+            ->where('master_outcome_categories.is_counted', true)
             ->whereNull('master_outcome_categories.deleted_at') // Filter kategori yang sudah dihapus
             ->select('master_outcome_categories.name', \DB::raw('SUM(outcomes.amount) as total'))
             ->groupBy('master_outcome_categories.name')
@@ -118,6 +119,8 @@ class DashboardController extends Controller
         // 2. Chart by Type
         $byType = Outcome::where('outcomes.master_period_id', $period->id)
             ->join('master_outcome_types', 'outcomes.master_outcome_type_id', '=', 'master_outcome_types.id')
+            ->join('master_outcome_categories', 'outcomes.master_outcome_category_id', '=', 'master_outcome_categories.id')
+            ->where('master_outcome_categories.is_counted', true)
             ->whereNull('master_outcome_types.deleted_at') // Filter tipe yang sudah dihapus
             ->select('master_outcome_types.name', \DB::raw('SUM(outcomes.amount) as total'))
             ->groupBy('master_outcome_types.name')
@@ -128,7 +131,9 @@ class DashboardController extends Controller
             ->join('outcome_detail_tag', 'master_outcome_detail_tags.id', '=', 'outcome_detail_tag.master_outcome_detail_tag_id')
             ->join('outcome_details', 'outcome_detail_tag.outcome_detail_id', '=', 'outcome_details.id')
             ->join('outcomes', 'outcome_details.outcome_id', '=', 'outcomes.id')
+            ->join('master_outcome_categories', 'outcomes.master_outcome_category_id', '=', 'master_outcome_categories.id')
             ->where('outcomes.master_period_id', $period->id)
+            ->where('master_outcome_categories.is_counted', true)
             ->where('master_outcome_detail_tags.user_id', $userId)
             ->whereNull('master_outcome_detail_tags.deleted_at') // Filter tag yang sudah dihapus
             ->select('master_outcome_detail_tags.name', \DB::raw('SUM(outcome_details.amount) as total'))
@@ -160,12 +165,15 @@ class DashboardController extends Controller
 
         $outcomeFromDetails = \DB::table('outcome_details')
             ->join('outcomes', 'outcome_details.outcome_id', '=', 'outcomes.id')
+            ->join('master_outcome_categories', 'outcomes.master_outcome_category_id', '=', 'master_outcome_categories.id')
             ->where('outcomes.master_period_id', $period->id)
+            ->where('master_outcome_categories.is_counted', true)
             ->select(\DB::raw('DATE(outcome_details.date) as transaction_date'), \DB::raw('SUM(outcome_details.amount) as total'))
             ->groupBy('transaction_date')
             ->pluck('total', 'transaction_date');
 
         $outcomeFromParentOnly = Outcome::where('master_period_id', $period->id)
+            ->counted()
             ->whereNotExists(function ($query) {
                 $query->select(\DB::raw(1))
                     ->from('outcome_details')

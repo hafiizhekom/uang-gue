@@ -35,6 +35,11 @@ class Outcome extends Model
         'user_id', 'date', 'title', 'amount', 'has_detail', 'master_outcome_category_id', 'master_outcome_type_id', 'master_payment_id', 'master_period_id', 'master_payment_id', 'note'
     ];
 
+    public function scopeCounted($query)
+    {
+        return $query->whereHas('category', fn ($category) => $category->where('is_counted', true));
+    }
+
     public function user() { return $this->belongsTo(User::class); }
 
     public function category() { 
