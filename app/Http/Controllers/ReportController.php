@@ -160,7 +160,9 @@ class ReportController extends Controller
             ->join('outcome_detail_tag', 'master_outcome_detail_tags.id', '=', 'outcome_detail_tag.master_outcome_detail_tag_id')
             ->join('outcome_details', 'outcome_detail_tag.outcome_detail_id', '=', 'outcome_details.id')
             ->join('outcomes', 'outcome_details.outcome_id', '=', 'outcomes.id')
+            ->join('master_outcome_categories', 'outcomes.master_outcome_category_id', '=', 'master_outcome_categories.id')
             ->whereIn('outcomes.master_period_id', $periodIds)
+            ->where('master_outcome_categories.is_counted', true)
             ->where('master_outcome_detail_tags.user_id', $userId)
             ->whereNull('master_outcome_detail_tags.deleted_at')
             ->select(
@@ -207,14 +209,14 @@ class ReportController extends Controller
     private function period_balance($period, $userId)
     {
         $totalIncome  = (float) Income::where('master_period_id', $period->id)->sum('amount');
-        $totalOutcome = (float) Outcome::where('master_period_id', $period->id)->sum('amount');
+        $totalOutcome = (float) Outcome::counted()->where('master_period_id', $period->id)->sum('amount');
         $openingBalance = (float) $period->opening_balance;
 
         $periodSurplusDeficit = $totalIncome - $totalOutcome;
         $closingBalance = $openingBalance + $periodSurplusDeficit;
 
         $countTransactions = Income::where('master_period_id', $period->id)->count()
-            + Outcome::where('master_period_id', $period->id)->count();
+            + Outcome::counted()->where('master_period_id', $period->id)->count();
 
         return [
             'total_income'           => $totalIncome,
@@ -241,12 +243,15 @@ class ReportController extends Controller
 
         $outcomeFromDetails = DB::table('outcome_details')
             ->join('outcomes', 'outcome_details.outcome_id', '=', 'outcomes.id')
+            ->join('master_outcome_categories', 'outcomes.master_outcome_category_id', '=', 'master_outcome_categories.id')
             ->where('outcomes.master_period_id', $period->id)
+            ->where('master_outcome_categories.is_counted', true)
             ->select(DB::raw('DATE(outcome_details.date) as transaction_date'), DB::raw('SUM(outcome_details.amount) as total'))
             ->groupBy('transaction_date')
             ->pluck('total', 'transaction_date');
 
         $outcomeFromParentOnly = Outcome::where('master_period_id', $period->id)
+            ->counted()
             ->whereNotExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('outcome_details')
@@ -278,6 +283,11 @@ class ReportController extends Controller
     {
         $rows = Outcome::where('outcomes.master_period_id', $period->id)
             ->join($relatedTable, "outcomes.{$foreignKey}", '=', "{$relatedTable}.id")
+            ->when($relatedTable === 'master_outcome_categories', fn ($query) => $query
+                ->where('master_outcome_categories.is_counted', true))
+            ->when($relatedTable !== 'master_outcome_categories', fn ($query) => $query
+                ->join('master_outcome_categories', 'outcomes.master_outcome_category_id', '=', 'master_outcome_categories.id')
+                ->where('master_outcome_categories.is_counted', true))
             ->whereNull("{$relatedTable}.deleted_at")
             ->select(
                 DB::raw('DATE(outcomes.date) as transaction_date'),
@@ -501,6 +511,11 @@ class ReportController extends Controller
 
         $rows = Outcome::whereIn('outcomes.master_period_id', $periodIds)
             ->join($relatedTable, "outcomes.{$foreignKey}", '=', "{$relatedTable}.id")
+            ->when($relatedTable === 'master_outcome_categories', fn ($query) => $query
+                ->where('master_outcome_categories.is_counted', true))
+            ->when($relatedTable !== 'master_outcome_categories', fn ($query) => $query
+                ->join('master_outcome_categories', 'outcomes.master_outcome_category_id', '=', 'master_outcome_categories.id')
+                ->where('master_outcome_categories.is_counted', true))
             ->whereNull("{$relatedTable}.deleted_at")
             ->select(
                 'outcomes.master_period_id',
