@@ -22,6 +22,11 @@ class MasterOutcomeCategory extends Model
         'user_id',
         'name',
         'slug',
+        'is_counted',
+    ];
+
+    protected $casts = [
+        'is_counted' => 'boolean',
     ];
 
     // Relasi balik ke Outcome

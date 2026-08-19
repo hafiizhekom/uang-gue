@@ -45,7 +45,11 @@ class StoreUpdateOutcomeCategoryRequest extends FormRequest
                 'required',
                 'string',
                 'max:255'
-            ]
+            ],
+            'is_counted' => [
+                'sometimes',
+                'boolean',
+            ],
         ];
 
         if (!$id) {
