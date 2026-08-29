@@ -282,7 +282,26 @@ class ReportController extends Controller
      */
     private function daily_outcome_pivot($period, string $relatedTable, string $foreignKey)
     {
-        $rows = Outcome::where('outcomes.master_period_id', $period->id)
+        $detailRows = DB::table('outcome_details')
+            ->join('outcomes', 'outcome_details.outcome_id', '=', 'outcomes.id')
+            ->join($relatedTable, "outcomes.{$foreignKey}", '=', "{$relatedTable}.id")
+            ->when($relatedTable === 'master_outcome_categories', fn ($query) => $query
+                ->where('master_outcome_categories.is_counted', true))
+            ->when($relatedTable !== 'master_outcome_categories', fn ($query) => $query
+                ->join('master_outcome_categories', 'outcomes.master_outcome_category_id', '=', 'master_outcome_categories.id')
+                ->where('master_outcome_categories.is_counted', true))
+            ->where('outcomes.master_period_id', $period->id)
+            ->whereNull('outcome_details.deleted_at')
+            ->whereNull("{$relatedTable}.deleted_at")
+            ->select(
+                DB::raw('DATE(outcome_details.date) as transaction_date'),
+                "{$relatedTable}.name as name",
+                DB::raw('SUM(outcome_details.amount) as total')
+            )
+            ->groupBy('transaction_date', "{$relatedTable}.name")
+            ->get();
+
+        $parentOnlyRows = Outcome::where('outcomes.master_period_id', $period->id)
             ->join($relatedTable, "outcomes.{$foreignKey}", '=', "{$relatedTable}.id")
             ->when($relatedTable === 'master_outcome_categories', fn ($query) => $query
                 ->where('master_outcome_categories.is_counted', true))
@@ -290,6 +309,11 @@ class ReportController extends Controller
                 ->join('master_outcome_categories', 'outcomes.master_outcome_category_id', '=', 'master_outcome_categories.id')
                 ->where('master_outcome_categories.is_counted', true))
             ->whereNull("{$relatedTable}.deleted_at")
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('outcome_details')
+                    ->whereRaw('outcome_details.outcome_id = outcomes.id');
+            })
             ->select(
                 DB::raw('DATE(outcomes.date) as transaction_date'),
                 "{$relatedTable}.name as name",
@@ -297,6 +321,8 @@ class ReportController extends Controller
             )
             ->groupBy('transaction_date', "{$relatedTable}.name")
             ->get();
+
+        $rows = $detailRows->concat($parentOnlyRows);
 
         return $this->buildDailyPivot($rows, $period);
     }
