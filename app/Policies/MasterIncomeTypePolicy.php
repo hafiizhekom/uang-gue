@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\MasterIncomeType;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class MasterIncomeTypePolicy
 {
@@ -13,7 +12,7 @@ class MasterIncomeTypePolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -21,7 +20,7 @@ class MasterIncomeTypePolicy
      */
     public function view(User $user, MasterIncomeType $masterIncomeType): bool
     {
-        return $user->id === $masterIncomeType->user_id;
+        return $masterIncomeType->project_id ? $user->belongsToProject($masterIncomeType->project_id) : $user->id === $masterIncomeType->user_id;
     }
 
     /**
@@ -29,7 +28,7 @@ class MasterIncomeTypePolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -37,7 +36,7 @@ class MasterIncomeTypePolicy
      */
     public function update(User $user, MasterIncomeType $masterIncomeType): bool
     {
-        return $user->id === $masterIncomeType->user_id;
+        return $masterIncomeType->project_id ? $user->belongsToProject($masterIncomeType->project_id) : $user->id === $masterIncomeType->user_id;
     }
 
     /**
@@ -45,7 +44,7 @@ class MasterIncomeTypePolicy
      */
     public function delete(User $user, MasterIncomeType $masterIncomeType): bool
     {
-        return $user->id === $masterIncomeType->user_id;
+        return $masterIncomeType->project_id ? $user->belongsToProject($masterIncomeType->project_id) : $user->id === $masterIncomeType->user_id;
     }
 
     /**
@@ -53,7 +52,7 @@ class MasterIncomeTypePolicy
      */
     public function restore(User $user, MasterIncomeType $masterIncomeType): bool
     {
-        return false;
+        return $masterIncomeType->project_id ? $user->belongsToProject($masterIncomeType->project_id) : $user->id === $masterIncomeType->user_id;
     }
 
     /**
@@ -61,6 +60,6 @@ class MasterIncomeTypePolicy
      */
     public function forceDelete(User $user, MasterIncomeType $masterIncomeType): bool
     {
-        return false;
+        return $masterIncomeType->project_id ? $user->belongsToProject($masterIncomeType->project_id) : $user->id === $masterIncomeType->user_id;
     }
 }

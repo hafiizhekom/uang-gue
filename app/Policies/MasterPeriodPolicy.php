@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\MasterPeriod;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class MasterPeriodPolicy
 {
@@ -13,7 +12,7 @@ class MasterPeriodPolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -21,7 +20,7 @@ class MasterPeriodPolicy
      */
     public function view(User $user, MasterPeriod $masterPeriod): bool
     {
-        return $user->id === $masterPeriod->user_id;
+        return $masterPeriod->project_id ? $user->belongsToProject($masterPeriod->project_id) : $user->id === $masterPeriod->user_id;
     }
 
     /**
@@ -29,7 +28,7 @@ class MasterPeriodPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -37,7 +36,7 @@ class MasterPeriodPolicy
      */
     public function update(User $user, MasterPeriod $masterPeriod): bool
     {
-        return $user->id === $masterPeriod->user_id;
+        return $masterPeriod->project_id ? $user->belongsToProject($masterPeriod->project_id) : $user->id === $masterPeriod->user_id;
     }
 
     /**
@@ -45,7 +44,7 @@ class MasterPeriodPolicy
      */
     public function delete(User $user, MasterPeriod $masterPeriod): bool
     {
-        return $user->id === $masterPeriod->user_id;
+        return $masterPeriod->project_id ? $user->belongsToProject($masterPeriod->project_id) : $user->id === $masterPeriod->user_id;
     }
 
     /**
@@ -53,7 +52,7 @@ class MasterPeriodPolicy
      */
     public function restore(User $user, MasterPeriod $masterPeriod): bool
     {
-        return false;
+        return $masterPeriod->project_id ? $user->belongsToProject($masterPeriod->project_id) : $user->id === $masterPeriod->user_id;
     }
 
     /**
@@ -61,6 +60,6 @@ class MasterPeriodPolicy
      */
     public function forceDelete(User $user, MasterPeriod $masterPeriod): bool
     {
-        return false;
+        return $masterPeriod->project_id ? $user->belongsToProject($masterPeriod->project_id) : $user->id === $masterPeriod->user_id;
     }
 }

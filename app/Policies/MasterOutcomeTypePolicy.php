@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\MasterOutcomeType;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class MasterOutcomeTypePolicy
 {
@@ -13,7 +12,7 @@ class MasterOutcomeTypePolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -21,7 +20,7 @@ class MasterOutcomeTypePolicy
      */
     public function view(User $user, MasterOutcomeType $masterOutcomeType): bool
     {
-        return $user->id === $masterOutcomeType->user_id;
+        return $masterOutcomeType->project_id ? $user->belongsToProject($masterOutcomeType->project_id) : $user->id === $masterOutcomeType->user_id;
     }
 
     /**
@@ -29,7 +28,7 @@ class MasterOutcomeTypePolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -37,7 +36,7 @@ class MasterOutcomeTypePolicy
      */
     public function update(User $user, MasterOutcomeType $masterOutcomeType): bool
     {
-        return $user->id === $masterOutcomeType->user_id;
+        return $masterOutcomeType->project_id ? $user->belongsToProject($masterOutcomeType->project_id) : $user->id === $masterOutcomeType->user_id;
     }
 
     /**
@@ -45,7 +44,7 @@ class MasterOutcomeTypePolicy
      */
     public function delete(User $user, MasterOutcomeType $masterOutcomeType): bool
     {
-        return $user->id === $masterOutcomeType->user_id;    
+        return $masterOutcomeType->project_id ? $user->belongsToProject($masterOutcomeType->project_id) : $user->id === $masterOutcomeType->user_id;
     }
 
     /**
@@ -53,7 +52,7 @@ class MasterOutcomeTypePolicy
      */
     public function restore(User $user, MasterOutcomeType $masterOutcomeType): bool
     {
-        return false;
+        return $masterOutcomeType->project_id ? $user->belongsToProject($masterOutcomeType->project_id) : $user->id === $masterOutcomeType->user_id;
     }
 
     /**
@@ -61,6 +60,6 @@ class MasterOutcomeTypePolicy
      */
     public function forceDelete(User $user, MasterOutcomeType $masterOutcomeType): bool
     {
-        return false;
+        return $masterOutcomeType->project_id ? $user->belongsToProject($masterOutcomeType->project_id) : $user->id === $masterOutcomeType->user_id;
     }
 }

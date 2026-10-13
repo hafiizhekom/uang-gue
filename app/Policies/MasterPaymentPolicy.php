@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\MasterPayment;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class MasterPaymentPolicy
 {
@@ -13,7 +12,7 @@ class MasterPaymentPolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -21,7 +20,7 @@ class MasterPaymentPolicy
      */
     public function view(User $user, MasterPayment $masterPayment): bool
     {
-        return $user->id === $masterPayment->user_id;
+        return $masterPayment->project_id ? $user->belongsToProject($masterPayment->project_id) : $user->id === $masterPayment->user_id;
     }
 
     /**
@@ -29,7 +28,7 @@ class MasterPaymentPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -37,7 +36,7 @@ class MasterPaymentPolicy
      */
     public function update(User $user, MasterPayment $masterPayment): bool
     {
-        return $user->id === $masterPayment->user_id;
+        return $masterPayment->project_id ? $user->belongsToProject($masterPayment->project_id) : $user->id === $masterPayment->user_id;
     }
 
     /**
@@ -45,7 +44,7 @@ class MasterPaymentPolicy
      */
     public function delete(User $user, MasterPayment $masterPayment): bool
     {
-        return $user->id === $masterPayment->user_id;
+        return $masterPayment->project_id ? $user->belongsToProject($masterPayment->project_id) : $user->id === $masterPayment->user_id;
     }
 
     /**
@@ -53,7 +52,7 @@ class MasterPaymentPolicy
      */
     public function restore(User $user, MasterPayment $masterPayment): bool
     {
-        return false;
+        return $masterPayment->project_id ? $user->belongsToProject($masterPayment->project_id) : $user->id === $masterPayment->user_id;
     }
 
     /**
@@ -61,6 +60,6 @@ class MasterPaymentPolicy
      */
     public function forceDelete(User $user, MasterPayment $masterPayment): bool
     {
-        return false;
+        return $masterPayment->project_id ? $user->belongsToProject($masterPayment->project_id) : $user->id === $masterPayment->user_id;
     }
 }

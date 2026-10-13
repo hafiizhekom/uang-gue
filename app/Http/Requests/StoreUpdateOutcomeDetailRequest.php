@@ -3,11 +3,14 @@
 namespace App\Http\Requests;
 
 use App\Models\Outcome;
+use App\Traits\HasProjectContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreUpdateOutcomeDetailRequest extends FormRequest
 {
+    use HasProjectContext;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -23,16 +26,24 @@ class StoreUpdateOutcomeDetailRequest extends FormRequest
      */
     public function rules(): array
     {
+        $projectId = $this->currentProjectId();
+
         $rules = [
             'outcome_id' => [
                 'required',
-                function ($attribute, $value, $fail) {
+                function ($attribute, $value, $fail) use ($projectId) {
                     $outcome = Outcome::where('id', $value)
-                        ->where('user_id', auth()->id())
+                        ->where(function ($query) use ($projectId) {
+                            if ($projectId) {
+                                $query->where('project_id', $projectId);
+                            } else {
+                                $query->where('user_id', auth()->id());
+                            }
+                        })
                         ->first();
 
                     if (!$outcome) {
-                        $fail('The selected outcome is invalid or does not belong to you.');
+                        $fail('The selected outcome is invalid or does not belong to this project.');
                         return;
                     }
 
@@ -43,7 +54,7 @@ class StoreUpdateOutcomeDetailRequest extends FormRequest
             ],
             'master_payment_id' => [
                 'required',
-                Rule::exists('master_payments', 'id')->where(fn($q) => $q->where('user_id', auth()->id())->whereNull('deleted_at')),
+                Rule::exists('master_payments', 'id')->where(fn($q) => $q->where('project_id', $projectId)->whereNull('deleted_at')),
             ],
             'title' => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'min:0'],
@@ -68,7 +79,7 @@ class StoreUpdateOutcomeDetailRequest extends FormRequest
             'tags.*' => [
                 'integer',
                 Rule::exists('master_outcome_detail_tags', 'id')->where(fn ($q) => 
-                    $q->where('user_id', auth()->id())->whereNull('deleted_at')
+                    $q->where('project_id', $projectId)->whereNull('deleted_at')
                 ),
             ],
         ];

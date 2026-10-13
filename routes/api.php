@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\MasterIncomeTypeController;
 use App\Http\Controllers\MasterOutcomeCategoryController;
@@ -10,11 +12,9 @@ use App\Http\Controllers\MasterPaymentController;
 use App\Http\Controllers\MasterPeriodController;
 use App\Http\Controllers\OutcomeController;
 use App\Http\Controllers\OutcomeDetailController;
-use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ReportController;
-use App\Http\Controllers\ActivityLogController;
 use Illuminate\Support\Facades\Route;
-
 
 // Public Routes
 Route::post('/register', [AuthController::class, 'register']);
@@ -24,39 +24,40 @@ Route::post('/auth/google', [AuthController::class, 'handleGoogleAuth']);
 // Protected Routes
 Route::middleware('auth:sanctum')->group(function () {
     
-    // --- MASTER DATA ---
-    Route::apiResource('master-periods', MasterPeriodController::class);
-    Route::apiResource('master-income-types', MasterIncomeTypeController::class);
-    Route::apiResource('master-outcome-categories', MasterOutcomeCategoryController::class);
-    Route::apiResource('master-outcome-types', MasterOutcomeTypeController::class);
-    Route::apiResource('master-payments', MasterPaymentController::class);
-    Route::apiResource('master-outcome-detail-tags', MasterOutcomeDetailTagController::class);
+    // --- PROJECT MANAGEMENT ---
+    Route::apiResource('projects', ProjectController::class);
+    Route::post('projects/{project}/members', [ProjectController::class, 'addMember']);
+    Route::delete('projects/{project}/members/{user}', [ProjectController::class, 'removeMember']);
 
-    // --- TRANSACTIONS: INCOMES ---
-    Route::apiResource('incomes', IncomeController::class);
-    // Route::post('incomes/{id}/restore', [IncomeController::class, 'restore']);
-    // Route::delete('incomes/{id}/force', [IncomeController::class, 'forceDelete']);
+    // --- PROJECT-SCOPED ROUTES ---
+    Route::middleware('project')->group(function () {
+        // --- MASTER DATA ---
+        Route::apiResource('master-periods', MasterPeriodController::class);
+        Route::apiResource('master-income-types', MasterIncomeTypeController::class);
+        Route::apiResource('master-outcome-categories', MasterOutcomeCategoryController::class);
+        Route::apiResource('master-outcome-types', MasterOutcomeTypeController::class);
+        Route::apiResource('master-payments', MasterPaymentController::class);
+        Route::apiResource('master-outcome-detail-tags', MasterOutcomeDetailTagController::class);
 
-    // --- TRANSACTIONS: OUTCOMES ---
-    Route::apiResource('outcomes', OutcomeController::class);
-    // Route::post('outcomes/{id}/restore', [OutcomeController::class, 'restore']);
-    // Route::delete('outcomes/{id}/force', [OutcomeController::class, 'forceDelete']);
+        // --- TRANSACTIONS: INCOMES ---
+        Route::apiResource('incomes', IncomeController::class);
 
-    // --- OUTCOME DETAILS ---
-    // Biasanya diakses berdasarkan parent (misal: /outcomes/{id}/details)
-    // Tapi apiResource mandiri juga oke kalau mau update item spesifik
-    Route::apiResource('outcome-details', OutcomeDetailController::class)->except(['show']);
-    // Route::apiResource('outcome-details', OutcomeDetailController::class)->except(['index', 'store']);
-    // Route::post('outcomes/{outcome_id}/details', [OutcomeDetailController::class, 'store']); // Create detail buat parent tertentu
+        // --- TRANSACTIONS: OUTCOMES ---
+        Route::apiResource('outcomes', OutcomeController::class);
 
-    Route::get('/activity-logs', [ActivityLogController::class, 'index']);
+        // --- OUTCOME DETAILS ---
+        Route::apiResource('outcome-details', OutcomeDetailController::class)->except(['show']);
 
-    // --- DASHBOARD ---
-    Route::get('/dashboard', [DashboardController::class, 'index']);
+        // --- ACTIVITY LOGS ---
+        Route::get('/activity-logs', [ActivityLogController::class, 'index']);
 
-    // --- REPORT ---
-    Route::get('/report/{period_id}', [ReportController::class, 'index']);
-    Route::get('/report-range', [ReportController::class, 'range']);
+        // --- DASHBOARD ---
+        Route::get('/dashboard', [DashboardController::class, 'index']);
+
+        // --- REPORT ---
+        Route::get('/report/{period_id}', [ReportController::class, 'index']);
+        Route::get('/report-range', [ReportController::class, 'range']);
+    });
 
     // --- AUTH & ME ---
     Route::post('/logout', [AuthController::class, 'logout']);

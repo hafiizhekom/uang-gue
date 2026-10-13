@@ -2,11 +2,14 @@
 
 namespace App\Http\Requests;
 
+use App\Traits\HasProjectContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class ReportRequest extends FormRequest
 {
+    use HasProjectContext;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -22,10 +25,19 @@ class ReportRequest extends FormRequest
      */
     public function rules(): array
     {
+        $projectId = $this->currentProjectId();
+
         return [
             'master_period_id' => [
                 'required',
-                Rule::exists('master_periods', 'id')->where('user_id', auth()->id())
+                Rule::exists('master_periods', 'id')->where(function ($q) use ($projectId) {
+                    if ($projectId) {
+                        $q->where('project_id', $projectId);
+                    } else {
+                        $q->where('user_id', auth()->id());
+                    }
+                    $q->whereNull('deleted_at');
+                }),
             ],
         ];
     }
