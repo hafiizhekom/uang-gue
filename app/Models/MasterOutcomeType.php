@@ -19,6 +19,7 @@ class MasterOutcomeType extends Model
     protected $table = 'master_outcome_types';
 
     protected $fillable = [
+        'project_id',
         'user_id',
         'name',
         'slug',
@@ -28,6 +29,11 @@ class MasterOutcomeType extends Model
     public function outcomes()
     {
         return $this->hasMany(Outcome::class, 'master_outcome_type_id');
+    }
+
+    public function project()
+    {
+        return $this->belongsTo(Project::class);
     }
 
     public function user()

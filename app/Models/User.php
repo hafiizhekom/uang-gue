@@ -12,6 +12,7 @@ use App\Models\Outcome;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
@@ -64,6 +65,26 @@ class User extends AuthenticatableUser
 		'remember_token'
 	];
 
+	public function projects(): BelongsToMany
+	{
+		return $this->belongsToMany(Project::class, 'project_user')
+			->withPivot('role')
+			->withTimestamps();
+	}
+
+	public function created_projects(): HasMany
+	{
+		return $this->hasMany(Project::class, 'created_by');
+	}
+
+	public function belongsToProject($projectId): bool
+	{
+		if (!$projectId) {
+			return false;
+		}
+		return $this->projects()->where('projects.id', $projectId)->exists();
+	}
+
 	public function income_types(): HasMany
 	{
 		return $this->hasMany(MasterIncomeType::class);
@@ -103,31 +124,4 @@ class User extends AuthenticatableUser
 	{
 		return $this->hasMany(MasterPeriod::class);
 	}
-
-	protected static function booted()
-    {
-        static::deleting(function ($model) {
-            if (!$model->isForceDeleting()) {
-				$model->periods()->delete();
-				$model->income_types()->delete();
-				$model->outcome_categories()->delete();
-				$model->outcome_types()->delete();
-				$model->outcome_detail_tags()->delete();
-				$model->payments()->delete();
-				$model->incomes()->delete();
-                $model->outcomes()->delete();
-            }
-        });
-
-        static::restoring(function ($model) {
-			$model->periods()->withTrashed()->restore();
-			$model->income_types()->withTrashed()->restore();
-			$model->outcome_categories()->withTrashed()->restore();
-			$model->outcome_types()->withTrashed()->restore();
-			$model->outcome_detail_tags()->withTrashed()->restore();
-			$model->payments()->withTrashed()->restore();
-            $model->incomes()->withTrashed()->restore();
-            $model->outcomes()->withTrashed()->restore();
-        });
-    }
 }

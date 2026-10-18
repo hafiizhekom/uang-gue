@@ -19,6 +19,7 @@ class MasterPeriod extends Model
 
     use HasFactory, SoftDeletes;
     protected $fillable = [
+        'project_id',
         'user_id', 
         'name', 
         'start_date', 
@@ -31,6 +32,11 @@ class MasterPeriod extends Model
     }
     public function outcomes() { 
         return $this->hasMany(Outcome::class); 
+    }
+
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
     }
 
     public function user(): BelongsTo

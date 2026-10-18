@@ -20,6 +20,7 @@ class Outcome extends Model
     use SoftDeletes, HasFactory;
 
     protected $casts = [
+        'project_id' => 'int',
         'amount' => 'float',
         'has_detail' => 'boolean',
         'user_id' => 'int',
@@ -32,13 +33,15 @@ class Outcome extends Model
     ];
 
     protected $fillable = [
-        'user_id', 'date', 'title', 'amount', 'has_detail', 'master_outcome_category_id', 'master_outcome_type_id', 'master_payment_id', 'master_period_id', 'master_payment_id', 'note'
+        'project_id', 'user_id', 'date', 'title', 'amount', 'has_detail', 'master_outcome_category_id', 'master_outcome_type_id', 'master_payment_id', 'master_period_id', 'note'
     ];
 
     public function scopeCounted($query)
     {
         return $query->whereHas('category', fn ($category) => $category->where('is_counted', true));
     }
+
+    public function project() { return $this->belongsTo(Project::class); }
 
     public function user() { return $this->belongsTo(User::class); }
 

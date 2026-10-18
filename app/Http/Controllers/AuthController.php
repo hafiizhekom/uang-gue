@@ -53,8 +53,14 @@ class AuthController extends Controller
         );
 
         // 4. JALANKAN SETUP (Starter Pack: Period, Payment, Categories, Template)
+        $project = null;
         if ($user->wasRecentlyCreated) {
-            $setupService->initializeNewUser($user);
+            $project = $setupService->initializeNewUser($user);
+        } else {
+            $project = $user->projects()->first();
+            if (!$project) {
+                $project = $setupService->initializeNewUser($user);
+            }
         }
 
         // 5. Generate Internal Token (Sanctum)
@@ -63,13 +69,15 @@ class AuthController extends Controller
         Log::info("User {$user->email} authenticated via Google. Token generated.");
 
         return response()->json([
-            'access_token' => $token,
-            'user'         => $user,
-            'is_new_user'  => $user->wasRecentlyCreated
+            'access_token'       => $token,
+            'token_type'         => 'Bearer',
+            'user'               => $user->load('projects'),
+            'current_project_id' => $project?->id,
+            'is_new_user'        => $user->wasRecentlyCreated,
         ]);
     }
     // POST /api/register
-    public function register(Request $request)
+    public function register(Request $request, UserSetupService $setupService)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -83,24 +91,27 @@ class AuthController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
+        $project = $setupService->initializeNewUser($user);
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => $user,
+            'access_token'       => $token,
+            'token_type'         => 'Bearer',
+            'user'               => $user->load('projects'),
+            'current_project_id' => $project->id,
         ], 201);
     }
 
     // POST /api/login
-    public function login(Request $request)
+    public function login(Request $request, UserSetupService $setupService)
     {
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::with('projects')->where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
@@ -111,12 +122,19 @@ class AuthController extends Controller
             ], 422);
         }
 
+        $currentProject = $user->projects->first();
+        if (!$currentProject) {
+            $currentProject = $setupService->initializeNewUser($user);
+            $user->load('projects');
+        }
+
         $token = $user->createToken('auth_token')->plainTextToken;
         
         return response()->json([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => $user,
+            'access_token'       => $token,
+            'token_type'         => 'Bearer',
+            'user'               => $user,
+            'current_project_id' => $currentProject?->id,
         ]);
     }
 
@@ -133,6 +151,6 @@ class AuthController extends Controller
     // GET /api/me
     public function me(Request $request)
     {
-        return response()->json($request->user());
+        return response()->json($request->user()->load('projects'));
     }
 }

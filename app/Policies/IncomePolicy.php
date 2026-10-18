@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\Income;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class IncomePolicy
 {
@@ -13,7 +12,7 @@ class IncomePolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -21,7 +20,7 @@ class IncomePolicy
      */
     public function view(User $user, Income $income): bool
     {
-        return $income->user_id === $user->id;
+        return $income->project_id ? $user->belongsToProject($income->project_id) : $income->user_id === $user->id;
     }
 
     /**
@@ -29,7 +28,7 @@ class IncomePolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -37,7 +36,7 @@ class IncomePolicy
      */
     public function update(User $user, Income $income): bool
     {
-        return $income->user_id === $user->id;
+        return $income->project_id ? $user->belongsToProject($income->project_id) : $income->user_id === $user->id;
     }
 
     /**
@@ -45,7 +44,7 @@ class IncomePolicy
      */
     public function delete(User $user, Income $income): bool
     {
-        return $income->user_id === $user->id;
+        return $income->project_id ? $user->belongsToProject($income->project_id) : $income->user_id === $user->id;
     }
 
     /**
@@ -53,7 +52,7 @@ class IncomePolicy
      */
     public function restore(User $user, Income $income): bool
     {
-        return false;
+        return $income->project_id ? $user->belongsToProject($income->project_id) : $income->user_id === $user->id;
     }
 
     /**
@@ -61,6 +60,6 @@ class IncomePolicy
      */
     public function forceDelete(User $user, Income $income): bool
     {
-        return false;
+        return $income->project_id ? $user->belongsToProject($income->project_id) : $income->user_id === $user->id;
     }
 }

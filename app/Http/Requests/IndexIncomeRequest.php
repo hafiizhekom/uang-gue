@@ -2,11 +2,14 @@
 
 namespace App\Http\Requests;
 
+use App\Traits\HasProjectContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class IndexIncomeRequest extends FormRequest
 {
+    use HasProjectContext;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -25,7 +28,9 @@ class IndexIncomeRequest extends FormRequest
         return [
             'master_period_id' => [
                 'required',
-                Rule::exists('master_periods', 'id')->where('user_id', auth()->id())
+                Rule::exists('master_periods', 'id')
+                    ->where('project_id', $this->currentProjectId())
+                    ->whereNull('deleted_at'),
             ],
         ];
     }
