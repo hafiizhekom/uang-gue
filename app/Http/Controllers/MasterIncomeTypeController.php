@@ -3,13 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Master\StoreUpdateIncomeTypeRequest;
-use App\Models\MasterIncomeType;
-use Illuminate\Routing\Controllers\Middleware;
 use App\Http\Resources\MasterResource;
+use App\Models\MasterIncomeType;
+use App\Traits\HasProjectContext;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Routing\Controllers\HasMiddleware;
 
 class MasterIncomeTypeController extends Controller implements HasMiddleware
 {
+    use HasProjectContext;
 
     public static function middleware(): array
     {
@@ -20,18 +22,26 @@ class MasterIncomeTypeController extends Controller implements HasMiddleware
             new Middleware('can:delete,master_income_type', only: ['destroy']),
         ];
     }
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        //
+        $projectId = $this->currentProjectId();
+
         $collection = MasterResource::collection(
             MasterIncomeType::query()
-            ->where('user_id', auth()->id())
-            ->withCount('incomes')
-            ->orderBy('id', 'asc')
-            ->cursorPaginate(50)
+                ->where(function ($query) use ($projectId) {
+                    if ($projectId) {
+                        $query->where('project_id', $projectId);
+                    } else {
+                        $query->where('user_id', auth()->id());
+                    }
+                })
+                ->withCount('incomes')
+                ->orderBy('id', 'asc')
+                ->cursorPaginate(50)
         );
 
         return $this->data($collection);
@@ -42,9 +52,13 @@ class MasterIncomeTypeController extends Controller implements HasMiddleware
      */
     public function store(StoreUpdateIncomeTypeRequest $request)
     {
-        //
-        $data = MasterIncomeType::create($request->validated());
-        return $this->success(new MasterResource($data), 'Category created successfully', 201);
+        $data = $request->validated();
+        if (!isset($data['project_id']) && $this->currentProjectId()) {
+            $data['project_id'] = $this->currentProjectId();
+        }
+
+        $incomeType = MasterIncomeType::create($data);
+        return $this->success(new MasterResource($incomeType), 'Category created successfully', 201);
     }
 
     /**
@@ -52,7 +66,6 @@ class MasterIncomeTypeController extends Controller implements HasMiddleware
      */
     public function show(MasterIncomeType $masterIncomeType)
     {
-        //
         return $this->data(new MasterResource($masterIncomeType));
     }
 
@@ -61,9 +74,8 @@ class MasterIncomeTypeController extends Controller implements HasMiddleware
      */
     public function update(StoreUpdateIncomeTypeRequest $request, MasterIncomeType $masterIncomeType)
     {
-        //
         $masterIncomeType->update($request->validated());
-        return $this->success(new MasterResource($masterIncomeType), 'Category updated successfully');
+        return $this->success(new MasterResource($masterIncomeType), 'Income Type updated successfully');
     }
 
     /**
@@ -71,8 +83,7 @@ class MasterIncomeTypeController extends Controller implements HasMiddleware
      */
     public function destroy(MasterIncomeType $masterIncomeType)
     {
-        //
         $masterIncomeType->delete();
-        return $this->success(null, 'Category deleted successfully');
+        return $this->success(null, 'Income Type deleted successfully');
     }
 }

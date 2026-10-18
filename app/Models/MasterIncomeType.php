@@ -20,6 +20,7 @@ class MasterIncomeType extends Model
     protected $table = 'master_income_types';
 
     protected $fillable = [
+        'project_id',
         'user_id',
         'name',
         'slug',
@@ -30,6 +31,11 @@ class MasterIncomeType extends Model
     public function incomes()
     {
         return $this->hasMany(Income::class, 'master_income_type_id');
+    }
+
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
     }
 
     public function user(): BelongsTo

@@ -7,12 +7,15 @@ use App\Http\Requests\Master\StoreUpdateOutcomeCategoryRequest;
 use App\Http\Resources\MasterCollection;
 use App\Http\Resources\MasterResource;
 use App\Models\MasterOutcomeCategory;
+use App\Traits\HasProjectContext;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Routing\Controllers\HasMiddleware;
 
 class MasterOutcomeCategoryController extends Controller implements HasMiddleware
 {
+    use HasProjectContext;
+
     public static function middleware(): array
     {
         return [
@@ -22,23 +25,28 @@ class MasterOutcomeCategoryController extends Controller implements HasMiddlewar
             new Middleware('can:delete,master_outcome_category', only: ['destroy']),
         ];
     }
-    /**
-     * Display a listing of the resource.
-     */
 
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        //
+        $projectId = $this->currentProjectId();
+
         $collection = MasterResource::collection(
             MasterOutcomeCategory::query()
-            ->where('user_id', auth()->id())
-            ->withCount('outcomes')
-            ->orderBy('id', 'asc')
-            ->cursorPaginate(50)
+                ->where(function ($query) use ($projectId) {
+                    if ($projectId) {
+                        $query->where('project_id', $projectId);
+                    } else {
+                        $query->where('user_id', auth()->id());
+                    }
+                })
+                ->withCount('outcomes')
+                ->orderBy('id', 'asc')
+                ->cursorPaginate(50)
         );
+
         return $this->data($collection);
     }
 
@@ -47,9 +55,13 @@ class MasterOutcomeCategoryController extends Controller implements HasMiddlewar
      */
     public function store(StoreUpdateOutcomeCategoryRequest $request)
     {
-        //
-        $data = MasterOutcomeCategory::create($request->validated());
-        return $this->success(new MasterResource($data), 'Outcome Category created successfully', 201);
+        $data = $request->validated();
+        if (!isset($data['project_id']) && $this->currentProjectId()) {
+            $data['project_id'] = $this->currentProjectId();
+        }
+
+        $outcomeCategory = MasterOutcomeCategory::create($data);
+        return $this->success(new MasterResource($outcomeCategory), 'Outcome Category created successfully', 201);
     }
 
     /**
@@ -57,7 +69,6 @@ class MasterOutcomeCategoryController extends Controller implements HasMiddlewar
      */
     public function show(MasterOutcomeCategory $masterOutcomeCategory)
     {
-        //
         return $this->data(new MasterResource($masterOutcomeCategory));
     }
 
@@ -66,7 +77,6 @@ class MasterOutcomeCategoryController extends Controller implements HasMiddlewar
      */
     public function update(StoreUpdateOutcomeCategoryRequest $request, MasterOutcomeCategory $masterOutcomeCategory)
     {
-        //
         $masterOutcomeCategory->update($request->validated());
         return $this->success(new MasterResource($masterOutcomeCategory), 'Outcome Category updated successfully');
     }
@@ -76,7 +86,6 @@ class MasterOutcomeCategoryController extends Controller implements HasMiddlewar
      */
     public function destroy(MasterOutcomeCategory $masterOutcomeCategory)
     {
-        //
         $masterOutcomeCategory->delete();
         return $this->success(null, 'Outcome Category deleted successfully');
     }

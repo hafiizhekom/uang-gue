@@ -19,6 +19,7 @@ class Income extends Model
     use SoftDeletes, HasFactory;
 
     protected $casts = [
+        'project_id' => 'int',
         'amount' => 'float',
         'master_income_type_id' => 'int',
         'user_id' => 'int',
@@ -28,8 +29,12 @@ class Income extends Model
     ];
 
     protected $fillable = [
-        'user_id', 'date', 'title', 'amount', 'master_income_type_id', 'note', 'master_period_id', 'master_payment_id'
+        'project_id', 'user_id', 'date', 'title', 'amount', 'master_income_type_id', 'note', 'master_period_id', 'master_payment_id'
     ];
+
+    public function project() {
+        return $this->belongsTo(Project::class);
+    }
 
     public function user() {
         return $this->belongsTo(User::class);

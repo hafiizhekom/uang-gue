@@ -22,6 +22,7 @@ class MasterPayment extends Model
     protected $table = 'master_payments';
 
     protected $fillable = [
+        'project_id',
         'user_id',
         'name',
         'slug',
@@ -43,6 +44,11 @@ class MasterPayment extends Model
     public function incomes()
     {
         return $this->hasMany(Income::class, 'master_payment_id');
+    }
+
+    public function project()
+    {
+        return $this->belongsTo(Project::class);
     }
 
     public function user()

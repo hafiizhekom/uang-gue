@@ -19,6 +19,7 @@ class MasterOutcomeDetailTag extends Model
     protected $table = 'master_outcome_detail_tags';
 
     protected $fillable = [
+        'project_id',
         'user_id',
         'name', 
         'slug'
@@ -26,6 +27,11 @@ class MasterOutcomeDetailTag extends Model
 
     public function outcome_details() {
         return $this->belongsToMany(OutcomeDetail::class, 'outcome_detail_tag');
+    }
+
+    public function project()
+    {
+        return $this->belongsTo(Project::class);
     }
 
     public function user()

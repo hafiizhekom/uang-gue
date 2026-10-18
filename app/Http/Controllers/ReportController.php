@@ -10,21 +10,24 @@ use App\Http\Resources\ReportResource;
 use App\Models\Income;
 use App\Models\MasterPeriod;
 use App\Models\Outcome;
+use App\Traits\HasProjectContext;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
+    use HasProjectContext;
+
     /**
      * Single-period report: daily table + daily breakdown charts.
      * GET /report/{period_id}
      */
     public function index(ReportRequest $request)
     {
-        $userId = auth()->id();
+        $projectId = $this->currentProjectId();
         $period = MasterPeriod::find($request->master_period_id);
 
-        $balance = $this->period_balance($period, $userId);
+        $balance = $this->period_balance($period);
 
         $data = [
             'period' => [
@@ -47,7 +50,7 @@ class ReportController extends Controller
             'daily_by_type' => $this->daily_outcome_pivot($period, 'master_outcome_types', 'master_outcome_type_id'),
 
             // Chart: pengeluaran / tags / hari
-            'daily_by_tags' => $this->daily_tags_pivot($period, $userId),
+            'daily_by_tags' => $this->daily_tags_pivot($period, $projectId),
 
             // Chart: pemasukan / type / hari
             'daily_income_by_type' => $this->daily_income_pivot($period),
@@ -64,9 +67,15 @@ class ReportController extends Controller
      */
     public function range(ReportRangeRequest $request)
     {
-        $userId = auth()->id();
+        $projectId = $this->currentProjectId();
 
-        $periods = MasterPeriod::where('user_id', $userId)
+        $periods = MasterPeriod::where(function ($query) use ($projectId) {
+                if ($projectId) {
+                    $query->where('project_id', $projectId);
+                } else {
+                    $query->where('user_id', auth()->id());
+                }
+            })
             ->where('start_date', '>=', $request->start_date)
             ->where('end_date', '<=', $request->end_date)
             ->orderBy('start_date')
@@ -79,13 +88,13 @@ class ReportController extends Controller
             ], 404);
         }
 
-        $periodStats = $periods->map(function ($period) use ($userId) {
+        $periodStats = $periods->map(function ($period) {
             return array_merge([
                 'id'         => $period->id,
                 'name'       => $period->name,
                 'start_date' => $period->start_date,
                 'end_date'   => $period->end_date,
-            ], $this->period_balance($period, $userId));
+            ], $this->period_balance($period));
         });
 
         $data = [
@@ -100,7 +109,7 @@ class ReportController extends Controller
 
             'outcome_by_category_per_period' => $this->outcome_per_period($periods, 'master_outcome_categories', 'master_outcome_category_id'),
             'outcome_by_type_per_period'     => $this->outcome_per_period($periods, 'master_outcome_types', 'master_outcome_type_id'),
-            'outcome_by_tags_per_period'     => $this->tags_per_period($periods, $userId),
+            'outcome_by_tags_per_period'     => $this->tags_per_period($periods, $projectId),
             'income_by_type_per_period'      => $this->income_by_type_per_period($periods),
         ];
 
@@ -152,7 +161,7 @@ class ReportController extends Controller
      * Pivot: outcome amount per period, broken down by tag.
      * Tags live at the outcome_details level.
      */
-    private function tags_per_period($periods, $userId)
+    private function tags_per_period($periods, $projectId)
     {
         $periodIds = $periods->pluck('id');
 
@@ -163,7 +172,13 @@ class ReportController extends Controller
             ->join('master_outcome_categories', 'outcomes.master_outcome_category_id', '=', 'master_outcome_categories.id')
             ->whereIn('outcomes.master_period_id', $periodIds)
             ->where('master_outcome_categories.is_counted', true)
-            ->where('master_outcome_detail_tags.user_id', $userId)
+            ->where(function ($query) use ($projectId) {
+                if ($projectId) {
+                    $query->where('master_outcome_detail_tags.project_id', $projectId);
+                } else {
+                    $query->where('master_outcome_detail_tags.user_id', auth()->id());
+                }
+            })
             ->whereNull('master_outcome_detail_tags.deleted_at')
             ->select(
                 'outcomes.master_period_id',
@@ -206,7 +221,7 @@ class ReportController extends Controller
      *   (karena numpang opening_balance gede dari bulan lalu) padahal sebenarnya period itu defisit
      *   (outcome > income). net_savings/closing_balance doang gak bakal keliatan hal ini.
      */
-    private function period_balance($period, $userId)
+    private function period_balance($period, $userId = null)
     {
         $totalIncome  = (float) Income::where('master_period_id', $period->id)->sum('amount');
         $totalOutcome = (float) Outcome::counted()->where('master_period_id', $period->id)->sum('amount');
@@ -330,14 +345,20 @@ class ReportController extends Controller
     /**
      * Pivot: outcome amount per day, broken down by tag. Tags live at the outcome_details level.
      */
-    private function daily_tags_pivot($period, $userId)
+    private function daily_tags_pivot($period, $projectId)
     {
         $rows = DB::table('master_outcome_detail_tags')
             ->join('outcome_detail_tag', 'master_outcome_detail_tags.id', '=', 'outcome_detail_tag.master_outcome_detail_tag_id')
             ->join('outcome_details', 'outcome_detail_tag.outcome_detail_id', '=', 'outcome_details.id')
             ->join('outcomes', 'outcome_details.outcome_id', '=', 'outcomes.id')
             ->where('outcomes.master_period_id', $period->id)
-            ->where('master_outcome_detail_tags.user_id', $userId)
+            ->where(function ($query) use ($projectId) {
+                if ($projectId) {
+                    $query->where('master_outcome_detail_tags.project_id', $projectId);
+                } else {
+                    $query->where('master_outcome_detail_tags.user_id', auth()->id());
+                }
+            })
             ->whereNull('master_outcome_detail_tags.deleted_at')
             ->select(
                 DB::raw('DATE(outcome_details.date) as transaction_date'),
