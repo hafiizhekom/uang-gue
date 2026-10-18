@@ -21,7 +21,7 @@ class ProjectResource extends JsonResource
             'created_by'  => $this->created_by,
             'role'        => $this->whenPivotLoaded('project_user', fn () => $this->pivot->role),
             'creator'     => new UserResource($this->whenLoaded('creator')),
-            'members'     => UserResource::collection($this->whenLoaded('users')),
+            'members'     => ProjectMemberResource::collection($this->whenLoaded('users')),
             'created_at'  => $this->created_at?->format('d-m-Y H:i'),
             'updated_at'  => $this->updated_at?->format('d-m-Y H:i'),
         ];
