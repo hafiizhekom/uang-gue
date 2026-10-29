@@ -25,8 +25,10 @@ class ReportRangeResource extends JsonResource
             'chart_data' => [
                 'outcome_by_category_per_period' => $this['outcome_by_category_per_period'],
                 'outcome_by_type_per_period'      => $this['outcome_by_type_per_period'],
-                'outcome_by_tags_per_period'     => $this['outcome_by_tags_per_period'],
-                'income_by_type_per_period'      => $this['income_by_type_per_period'],
+                'outcome_by_tags_per_period'      => $this['outcome_by_tags_per_period'],
+                'outcome_by_payment_per_period'   => $this['outcome_by_payment_per_period'],
+                'income_by_type_per_period'       => $this['income_by_type_per_period'],
+                'income_by_payment_per_period'    => $this['income_by_payment_per_period'],
             ],
         ];
     }
