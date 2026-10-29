@@ -27,10 +27,12 @@ class ReportResource extends JsonResource
                     'by_category' => $this['daily_by_category'],
                     'by_type'     => $this['daily_by_type'],
                     'by_tags'     => $this['daily_by_tags'],
+                    'by_payment'  => $this['daily_by_payment'],
                 ],
 
                 'income_breakdown' => [
-                    'by_type' => $this['daily_income_by_type'],
+                    'by_type'    => $this['daily_income_by_type'],
+                    'by_payment' => $this['daily_income_by_payment'],
                 ],
             ],
         ];

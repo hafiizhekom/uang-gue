@@ -52,8 +52,14 @@ class ReportController extends Controller
             // Chart: pengeluaran / tags / hari
             'daily_by_tags' => $this->daily_tags_pivot($period, $projectId),
 
+            // Chart: pengeluaran / payment / hari
+            'daily_by_payment' => $this->daily_outcome_by_payment_pivot($period),
+
             // Chart: pemasukan / type / hari
             'daily_income_by_type' => $this->daily_income_pivot($period),
+
+            // Chart: pemasukan / payment / hari
+            'daily_income_by_payment' => $this->daily_income_by_payment_pivot($period),
         ];
 
         return new ReportResource($data);
@@ -110,7 +116,9 @@ class ReportController extends Controller
             'outcome_by_category_per_period' => $this->outcome_per_period($periods, 'master_outcome_categories', 'master_outcome_category_id'),
             'outcome_by_type_per_period'     => $this->outcome_per_period($periods, 'master_outcome_types', 'master_outcome_type_id'),
             'outcome_by_tags_per_period'     => $this->tags_per_period($periods, $projectId),
+            'outcome_by_payment_per_period'  => $this->outcome_by_payment_per_period($periods),
             'income_by_type_per_period'      => $this->income_by_type_per_period($periods),
+            'income_by_payment_per_period'   => $this->income_by_payment_per_period($periods),
         ];
 
         return new ReportRangeResource($data);
@@ -571,6 +579,193 @@ class ReportController extends Controller
                 DB::raw('SUM(outcomes.amount) as total')
             )
             ->groupBy('outcomes.master_period_id', "{$relatedTable}.name")
+            ->get();
+
+        $series = $rows->pluck('name')->unique()->values()->all();
+
+        $matrix = [];
+        foreach ($periods as $period) {
+            $entry = ['period' => $period->name, 'period_id' => $period->id];
+            foreach ($series as $name) {
+                $entry[$name] = 0;
+            }
+            $matrix[$period->id] = $entry;
+        }
+
+        foreach ($rows as $row) {
+            if (isset($matrix[$row->master_period_id])) {
+                $matrix[$row->master_period_id][$row->name] = (float) $row->total;
+            }
+        }
+
+        return [
+            'series' => $series,
+            'data'   => array_values($matrix),
+        ];
+    }
+
+    /**
+     * Pivot: outcome amount per day, broken down by payment/wallet.
+     * - Outcome yang punya details → pakai payment dari detail (outcome_details.master_payment_id)
+     * - Outcome tanpa details → pakai payment dari parent (outcomes.master_payment_id)
+     * Tidak ada double-counting: parent diabaikan kalau sudah ada details.
+     */
+    private function daily_outcome_by_payment_pivot($period)
+    {
+        // Detail-level: outcome yang punya details → ikut payment di detail
+        $detailRows = DB::table('outcome_details')
+            ->join('outcomes', 'outcome_details.outcome_id', '=', 'outcomes.id')
+            ->join('master_payments', 'outcome_details.master_payment_id', '=', 'master_payments.id')
+            ->join('master_outcome_categories', 'outcomes.master_outcome_category_id', '=', 'master_outcome_categories.id')
+            ->where('outcomes.master_period_id', $period->id)
+            ->where('master_outcome_categories.is_counted', true)
+            ->whereNull('outcome_details.deleted_at')
+            ->whereNull('master_payments.deleted_at')
+            ->select(
+                DB::raw('DATE(outcome_details.date) as transaction_date'),
+                'master_payments.name as name',
+                DB::raw('SUM(outcome_details.amount) as total')
+            )
+            ->groupBy('transaction_date', 'master_payments.name')
+            ->get();
+
+        // Parent-only: outcome yang TIDAK punya details → ikut payment di parent
+        $parentOnlyRows = DB::table('outcomes')
+            ->join('master_payments', 'outcomes.master_payment_id', '=', 'master_payments.id')
+            ->join('master_outcome_categories', 'outcomes.master_outcome_category_id', '=', 'master_outcome_categories.id')
+            ->where('outcomes.master_period_id', $period->id)
+            ->where('master_outcome_categories.is_counted', true)
+            ->whereNull('outcomes.deleted_at')
+            ->whereNull('master_payments.deleted_at')
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('outcome_details')
+                    ->whereRaw('outcome_details.outcome_id = outcomes.id')
+                    ->whereNull('outcome_details.deleted_at');
+            })
+            ->select(
+                DB::raw('DATE(outcomes.date) as transaction_date'),
+                'master_payments.name as name',
+                DB::raw('SUM(outcomes.amount) as total')
+            )
+            ->groupBy('transaction_date', 'master_payments.name')
+            ->get();
+
+        $rows = $detailRows->concat($parentOnlyRows);
+
+        return $this->buildDailyPivot($rows, $period);
+    }
+
+    /**
+     * Pivot: income amount per day, broken down by payment/wallet.
+     */
+    private function daily_income_by_payment_pivot($period)
+    {
+        $rows = Income::where('incomes.master_period_id', $period->id)
+            ->join('master_payments', 'incomes.master_payment_id', '=', 'master_payments.id')
+            ->whereNull('master_payments.deleted_at')
+            ->select(
+                DB::raw('DATE(incomes.date) as transaction_date'),
+                'master_payments.name as name',
+                DB::raw('SUM(incomes.amount) as total')
+            )
+            ->groupBy('transaction_date', 'master_payments.name')
+            ->get();
+
+        return $this->buildDailyPivot($rows, $period);
+    }
+
+    /**
+     * Pivot: outcome amount per period, broken down by payment/wallet.
+     * - Outcome yang punya details → pakai payment dari detail (outcome_details.master_payment_id)
+     * - Outcome tanpa details → pakai payment dari parent (outcomes.master_payment_id)
+     * Tidak ada double-counting: parent diabaikan kalau sudah ada details.
+     */
+    private function outcome_by_payment_per_period($periods)
+    {
+        $periodIds = $periods->pluck('id');
+
+        // Detail-level: outcome yang punya details → ikut payment di detail
+        $detailRows = DB::table('outcome_details')
+            ->join('outcomes', 'outcome_details.outcome_id', '=', 'outcomes.id')
+            ->join('master_payments', 'outcome_details.master_payment_id', '=', 'master_payments.id')
+            ->join('master_outcome_categories', 'outcomes.master_outcome_category_id', '=', 'master_outcome_categories.id')
+            ->whereIn('outcomes.master_period_id', $periodIds)
+            ->where('master_outcome_categories.is_counted', true)
+            ->whereNull('outcome_details.deleted_at')
+            ->whereNull('master_payments.deleted_at')
+            ->select(
+                'outcomes.master_period_id',
+                'master_payments.name as name',
+                DB::raw('SUM(outcome_details.amount) as total')
+            )
+            ->groupBy('outcomes.master_period_id', 'master_payments.name')
+            ->get();
+
+        // Parent-only: outcome yang TIDAK punya details → ikut payment di parent
+        $parentOnlyRows = DB::table('outcomes')
+            ->join('master_payments', 'outcomes.master_payment_id', '=', 'master_payments.id')
+            ->join('master_outcome_categories', 'outcomes.master_outcome_category_id', '=', 'master_outcome_categories.id')
+            ->whereIn('outcomes.master_period_id', $periodIds)
+            ->where('master_outcome_categories.is_counted', true)
+            ->whereNull('outcomes.deleted_at')
+            ->whereNull('master_payments.deleted_at')
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('outcome_details')
+                    ->whereRaw('outcome_details.outcome_id = outcomes.id')
+                    ->whereNull('outcome_details.deleted_at');
+            })
+            ->select(
+                'outcomes.master_period_id',
+                'master_payments.name as name',
+                DB::raw('SUM(outcomes.amount) as total')
+            )
+            ->groupBy('outcomes.master_period_id', 'master_payments.name')
+            ->get();
+
+        $rows = $detailRows->concat($parentOnlyRows);
+
+        $series = $rows->pluck('name')->unique()->values()->all();
+
+        $matrix = [];
+        foreach ($periods as $period) {
+            $entry = ['period' => $period->name, 'period_id' => $period->id];
+            foreach ($series as $name) {
+                $entry[$name] = 0;
+            }
+            $matrix[$period->id] = $entry;
+        }
+
+        foreach ($rows as $row) {
+            if (isset($matrix[$row->master_period_id])) {
+                $matrix[$row->master_period_id][$row->name] =
+                    ($matrix[$row->master_period_id][$row->name] ?? 0) + (float) $row->total;
+            }
+        }
+
+        return [
+            'series' => $series,
+            'data'   => array_values($matrix),
+        ];
+    }
+
+    /**
+     * Pivot: income amount per period, broken down by payment/wallet.
+     */
+    private function income_by_payment_per_period($periods)
+    {
+        $periodIds = $periods->pluck('id');
+
+        $rows = Income::whereIn('incomes.master_period_id', $periodIds)
+            ->join('master_payments', 'incomes.master_payment_id', '=', 'master_payments.id')
+            ->whereNull('master_payments.deleted_at')
+            ->select(
+                'incomes.master_period_id',
+                'master_payments.name as name',
+                DB::raw('SUM(incomes.amount) as total')
+            )
+            ->groupBy('incomes.master_period_id', 'master_payments.name')
             ->get();
 
         $series = $rows->pluck('name')->unique()->values()->all();
