@@ -419,7 +419,7 @@ class ReportController extends Controller
         foreach ($rows as $row) {
             $dateStr = $row->transaction_date;
             if (isset($matrix[$dateStr])) {
-                $matrix[$dateStr][$row->name] = (float) $row->total;
+                $matrix[$dateStr][$row->name] = ($matrix[$dateStr][$row->name] ?? 0) + (float) $row->total;
             }
         }
 
