@@ -31,7 +31,9 @@ class DashboardController extends Controller
                 'byCategory' => [],
                 'byType' => [],
                 'byTags' => [],
+                'byPayment' => [],
                 'incomeByType' => [],
+                'incomeByPayment' => [],
             ];
 
             return [
@@ -51,7 +53,9 @@ class DashboardController extends Controller
                 'by_category'         => $last_period_chart['byCategory'],
                 'by_type'             => $last_period_chart['byType'],
                 'by_tags'             => $last_period_chart['byTags'],
+                'by_payment'          => $last_period_chart['byPayment'],
                 'income_by_type'      => $last_period_chart['incomeByType'],
+                'income_by_payment'   => $last_period_chart['incomeByPayment'],
 
                 // Section Daily Trend (Line Chart)
                 'last_period_trend'   => $period ? $this->last_period_trend($period) : [],
@@ -132,7 +136,50 @@ class DashboardController extends Controller
             ->groupBy('master_outcome_detail_tags.name')
             ->get();
 
-        // 4. Income by Type
+        // 4. Chart Outcome by Payment
+        // Outcome yang punya details ikut payment di detail (outcome_details.master_payment_id),
+        // outcome tanpa details ikut payment di parent (outcomes.master_payment_id).
+        // Parent diabaikan kalau sudah ada details, jadi tidak double-counting.
+        $outcomeByPaymentDetail = DB::table('outcome_details')
+            ->join('outcomes', 'outcome_details.outcome_id', '=', 'outcomes.id')
+            ->join('master_payments', 'outcome_details.master_payment_id', '=', 'master_payments.id')
+            ->join('master_outcome_categories', 'outcomes.master_outcome_category_id', '=', 'master_outcome_categories.id')
+            ->where('outcomes.master_period_id', $period->id)
+            ->where('master_outcome_categories.is_counted', true)
+            ->whereNull('outcome_details.deleted_at')
+            ->whereNull('master_payments.deleted_at')
+            ->select('master_payments.name as name', DB::raw('SUM(outcome_details.amount) as total'))
+            ->groupBy('master_payments.name')
+            ->get();
+
+        $outcomeByPaymentParent = DB::table('outcomes')
+            ->join('master_payments', 'outcomes.master_payment_id', '=', 'master_payments.id')
+            ->join('master_outcome_categories', 'outcomes.master_outcome_category_id', '=', 'master_outcome_categories.id')
+            ->where('outcomes.master_period_id', $period->id)
+            ->where('master_outcome_categories.is_counted', true)
+            ->whereNull('outcomes.deleted_at')
+            ->whereNull('master_payments.deleted_at')
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('outcome_details')
+                    ->whereRaw('outcome_details.outcome_id = outcomes.id')
+                    ->whereNull('outcome_details.deleted_at');
+            })
+            ->select('master_payments.name as name', DB::raw('SUM(outcomes.amount) as total'))
+            ->groupBy('master_payments.name')
+            ->get();
+
+        $byPayment = $outcomeByPaymentDetail
+            ->concat($outcomeByPaymentParent)
+            ->groupBy('name')
+            ->map(fn($rows, $name) => (object) [
+                'name'  => $name,
+                'total' => $rows->sum(fn($row) => (float) $row->total),
+            ])
+            ->sortByDesc('total')
+            ->values();
+
+        // 5. Income by Type
         $incomeByType = Income::where('incomes.master_period_id', $period->id)
             ->join('master_income_types', 'incomes.master_income_type_id', '=', 'master_income_types.id')
             ->whereNull('master_income_types.deleted_at') // Filter tipe income yang sudah dihapus
@@ -140,11 +187,21 @@ class DashboardController extends Controller
             ->groupBy('master_income_types.name')
             ->get();
 
+        // 6. Income by Payment
+        $incomeByPayment = Income::where('incomes.master_period_id', $period->id)
+            ->join('master_payments', 'incomes.master_payment_id', '=', 'master_payments.id')
+            ->whereNull('master_payments.deleted_at')
+            ->select('master_payments.name', DB::raw('SUM(incomes.amount) as total'))
+            ->groupBy('master_payments.name')
+            ->get();
+
         return [
-            'byCategory'   => $formatData($byCategory),
-            'byType'       => $formatData($byType),
-            'byTags'       => $formatData($byTags),
-            'incomeByType' => $formatData($incomeByType),
+            'byCategory'      => $formatData($byCategory),
+            'byType'          => $formatData($byType),
+            'byTags'          => $formatData($byTags),
+            'byPayment'       => $formatData($byPayment),
+            'incomeByType'    => $formatData($incomeByType),
+            'incomeByPayment' => $formatData($incomeByPayment),
         ];
     }
 

@@ -32,10 +32,12 @@ class DashboardResource extends JsonResource
                     'by_category' => $this['by_category'],
                     'by_type'     => $this['by_type'],
                     'by_tags'     => $this['by_tags'],
+                    'by_payment'     => $this['by_payment'],
                 ],
 
                 'income_breakdown' => [
                     'by_type' => $this['income_by_type'],
+                    'by_payment' => $this['income_by_payment'],
                 ],
             ],
 
