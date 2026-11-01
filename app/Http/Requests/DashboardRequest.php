@@ -2,11 +2,15 @@
 
 namespace App\Http\Requests;
 
+use App\Models\MasterPeriod;
+use App\Traits\HasProjectContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 class DashboardRequest extends FormRequest
 {
+    use HasProjectContext;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -29,17 +33,23 @@ class DashboardRequest extends FormRequest
 
     protected function prepareForValidation()
     {
-        $userId = auth()->id();
+        $projectId = $this->currentProjectId();
         $today = now()->toDateString();
 
-        $period = \App\Models\MasterPeriod::where('user_id', $userId)
+        $query = MasterPeriod::query();
+        if ($projectId) {
+            $query->where('project_id', $projectId);
+        } else {
+            $query->where('user_id', auth()->id());
+        }
+
+        $period = (clone $query)
             ->where('start_date', '<=', $today)
             ->where('end_date', '>=', $today)
             ->first() 
-            ?? \App\Models\MasterPeriod::where('user_id', $userId)->latest()->first();
+            ?? (clone $query)->latest()->first();
 
         if (!$period) {
-            // Panggil method error() dari trait ApiResponse lo
             throw new HttpResponseException(
                 response()->json([
                     'status'  => 'Error',

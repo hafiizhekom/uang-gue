@@ -18,10 +18,12 @@ class MasterPeriodFactory extends Factory
     public function definition(): array
     {
         return [
+            'project_id' => \App\Models\Project::factory(),
             'user_id' => User::factory(),
             'name' => $this->faker->monthName() . ' ' . $this->faker->year(),
             'start_date' => $this->faker->dateTimeThisYear()->format('Y-m-01'),
             'end_date' => $this->faker->dateTimeThisYear()->format('Y-m-t'),
+            'opening_balance' => $this->faker->numberBetween(0, 10000000),
         ];
     }
 }

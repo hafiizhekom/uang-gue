@@ -20,6 +20,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(append: [
             \App\Http\Middleware\ApiTrafficLogger::class,
         ]);
+
+        $middleware->alias([
+            'project' => \App\Http\Middleware\EnsureProjectAccess::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
 

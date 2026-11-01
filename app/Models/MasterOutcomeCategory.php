@@ -19,15 +19,26 @@ class MasterOutcomeCategory extends Model
     protected $table = 'master_outcome_categories';
 
     protected $fillable = [
+        'project_id',
         'user_id',
         'name',
         'slug',
+        'is_counted',
+    ];
+
+    protected $casts = [
+        'is_counted' => 'boolean',
     ];
 
     // Relasi balik ke Outcome
     public function outcomes()
     {
         return $this->hasMany(Outcome::class, 'master_outcome_category_id');
+    }
+
+    public function project()
+    {
+        return $this->belongsTo(Project::class);
     }
 
     public function user()

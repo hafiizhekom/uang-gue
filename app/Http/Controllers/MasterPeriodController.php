@@ -5,12 +5,15 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Master\StoreUpdatePeriodRequest;
 use App\Http\Resources\MasterResource;
 use App\Models\MasterPeriod;
+use App\Traits\HasProjectContext;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use App\Http\Controllers\Controller;
 
 class MasterPeriodController extends Controller implements HasMiddleware
 {
+    use HasProjectContext;
+
     public static function middleware(): array
     {
         return [
@@ -26,13 +29,20 @@ class MasterPeriodController extends Controller implements HasMiddleware
      */
     public function index()
     {
-        //
+        $projectId = $this->currentProjectId();
+
         $collection = MasterResource::collection(
             MasterPeriod::query()
-            ->where('user_id', auth()->id())
-            ->withCount(['outcomes', 'incomes'])
-            ->orderBy('id', 'asc')
-            ->cursorPaginate(50)
+                ->where(function ($query) use ($projectId) {
+                    if ($projectId) {
+                        $query->where('project_id', $projectId);
+                    } else {
+                        $query->where('user_id', auth()->id());
+                    }
+                })
+                ->withCount(['outcomes', 'incomes'])
+                ->orderBy('id', 'asc')
+                ->cursorPaginate(50)
         );
 
         return $this->data($collection);
@@ -43,8 +53,13 @@ class MasterPeriodController extends Controller implements HasMiddleware
      */
     public function store(StoreUpdatePeriodRequest $request)
     {
-        $data = MasterPeriod::create($request->validated());
-        return $this->success(new MasterResource($data), 'Period created successfully', 201);
+        $data = $request->validated();
+        if (!isset($data['project_id']) && $this->currentProjectId()) {
+            $data['project_id'] = $this->currentProjectId();
+        }
+
+        $period = MasterPeriod::create($data);
+        return $this->success(new MasterResource($period), 'Period created successfully', 201);
     }
 
     /**
@@ -52,7 +67,6 @@ class MasterPeriodController extends Controller implements HasMiddleware
      */
     public function show(MasterPeriod $masterPeriod)
     {
-        //
         return $this->data(new MasterResource($masterPeriod));
     }
 
@@ -61,9 +75,8 @@ class MasterPeriodController extends Controller implements HasMiddleware
      */
     public function update(StoreUpdatePeriodRequest $request, MasterPeriod $masterPeriod)
     {
-        //
         $masterPeriod->update($request->validated());
-        return $this->success(new MasterResource($masterPeriod), 'Period updated successfully', 200);
+        return $this->success(new MasterResource($masterPeriod), 'Period updated successfully');
     }
 
     /**
@@ -71,8 +84,7 @@ class MasterPeriodController extends Controller implements HasMiddleware
      */
     public function destroy(MasterPeriod $masterPeriod)
     {
-        //
         $masterPeriod->delete();
-        return $this->success(null, 'Period deleted successfully', 200);
+        return $this->success(null, 'Period deleted successfully');
     }
 }

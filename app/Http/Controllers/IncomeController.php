@@ -7,11 +7,14 @@ use App\Http\Requests\IndexIncomeRequest;
 use App\Http\Requests\StoreUpdateIncomeRequest;
 use App\Http\Resources\IncomeResource;
 use App\Models\Income;
+use App\Traits\HasProjectContext;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 
 class IncomeController extends Controller implements HasMiddleware
 {
+    use HasProjectContext;
+
     public static function middleware(): array
     {
         return [
@@ -27,13 +30,20 @@ class IncomeController extends Controller implements HasMiddleware
      */
     public function index(IndexIncomeRequest $request)
     {
-        //
+        $projectId = $this->currentProjectId();
+
         $incomes = Income::query()
-        ->where('user_id', auth()->id())
-        ->where('master_period_id', $request->master_period_id)
-        ->with(['type', 'payment'])
-        ->latest('date')
-        ->get();
+            ->where(function ($query) use ($projectId) {
+                if ($projectId) {
+                    $query->where('project_id', $projectId);
+                } else {
+                    $query->where('user_id', auth()->id());
+                }
+            })
+            ->where('master_period_id', $request->master_period_id)
+            ->with(['type', 'payment'])
+            ->latest('date')
+            ->get();
 
         return IncomeResource::collection($incomes);
     }
@@ -43,9 +53,16 @@ class IncomeController extends Controller implements HasMiddleware
      */
     public function store(StoreUpdateIncomeRequest $request)
     {
-        //
         $data = $request->validated();
-        return $this->success(new IncomeResource(Income::create($data)->load(['type', 'payment'])), 'Income created successfully', 201);
+        if (!isset($data['project_id']) && $this->currentProjectId()) {
+            $data['project_id'] = $this->currentProjectId();
+        }
+
+        return $this->success(
+            new IncomeResource(Income::create($data)->load(['type', 'payment'])),
+            'Income created successfully',
+            201
+        );
     }
 
     /**
@@ -53,7 +70,6 @@ class IncomeController extends Controller implements HasMiddleware
      */
     public function show(Income $income)
     {
-        //
         return $this->data(new IncomeResource($income->load(['type', 'payment'])));
     }
 
@@ -62,7 +78,6 @@ class IncomeController extends Controller implements HasMiddleware
      */
     public function update(StoreUpdateIncomeRequest $request, Income $income)
     {
-        //
         $income->update($request->validated());
         return $this->success(new IncomeResource($income->load(['type', 'payment'])), 'Income updated successfully');
     }
@@ -72,7 +87,6 @@ class IncomeController extends Controller implements HasMiddleware
      */
     public function destroy(Income $income)
     {
-        //
         $income->delete();
         return $this->success(null, 'Income deleted successfully');
     }

@@ -3,24 +3,44 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Master\StoreUpdateOutcomeTypeRequest;
-use App\Models\MasterOutcomeType;
-use Illuminate\Http\Request;
 use App\Http\Resources\MasterResource;
+use App\Models\MasterOutcomeType;
+use App\Traits\HasProjectContext;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class MasterOutcomeTypeController extends Controller
+class MasterOutcomeTypeController extends Controller implements HasMiddleware
 {
+    use HasProjectContext;
+
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:view,master_outcome_type', only: ['show']),
+            new Middleware('can:update,master_outcome_type', only: ['update']),
+            new Middleware('can:delete,master_outcome_type', only: ['destroy']),
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        //
+        $projectId = $this->currentProjectId();
+
         $collection = MasterResource::collection(
             MasterOutcomeType::query()
-            ->where('user_id', auth()->id())
-            ->withCount('outcomes')
-            ->orderBy('id', 'asc')
-            ->cursorPaginate(50)
+                ->where(function ($query) use ($projectId) {
+                    if ($projectId) {
+                        $query->where('project_id', $projectId);
+                    } else {
+                        $query->where('user_id', auth()->id());
+                    }
+                })
+                ->withCount('outcomes')
+                ->orderBy('id', 'asc')
+                ->cursorPaginate(50)
         );
 
         return $this->data($collection);
@@ -31,9 +51,13 @@ class MasterOutcomeTypeController extends Controller
      */
     public function store(StoreUpdateOutcomeTypeRequest $request)
     {
-        //
-        $data = MasterOutcomeType::create($request->validated());
-        return $this->success(new MasterResource($data), 'Outcome Type created successfully', 201);
+        $data = $request->validated();
+        if (!isset($data['project_id']) && $this->currentProjectId()) {
+            $data['project_id'] = $this->currentProjectId();
+        }
+
+        $outcomeType = MasterOutcomeType::create($data);
+        return $this->success(new MasterResource($outcomeType), 'Outcome Type created successfully', 201);
     }
 
     /**
@@ -41,8 +65,7 @@ class MasterOutcomeTypeController extends Controller
      */
     public function show(MasterOutcomeType $masterOutcomeType)
     {
-        //
-        return new MasterResource($masterOutcomeType);
+        return $this->data(new MasterResource($masterOutcomeType));
     }
 
     /**
@@ -50,9 +73,8 @@ class MasterOutcomeTypeController extends Controller
      */
     public function update(StoreUpdateOutcomeTypeRequest $request, MasterOutcomeType $masterOutcomeType)
     {
-        //
         $masterOutcomeType->update($request->validated());
-        return $this->success(new MasterResource($masterOutcomeType), 'Outcome Type updated successfully', 200);
+        return $this->success(new MasterResource($masterOutcomeType), 'Outcome Type updated successfully');
     }
 
     /**
@@ -60,8 +82,7 @@ class MasterOutcomeTypeController extends Controller
      */
     public function destroy(MasterOutcomeType $masterOutcomeType)
     {
-        //
         $masterOutcomeType->delete();
-        return $this->success(null, 'Outcome Type deleted successfully', 200);
+        return $this->success(null, 'Outcome Type deleted successfully');
     }
 }

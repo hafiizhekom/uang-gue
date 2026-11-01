@@ -4,13 +4,14 @@ namespace App\Traits;
 
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+
 trait ClearDashboardCache
 {
-    protected function refreshDashboard($userId)
+    protected function refreshDashboard($projectId)
     {
-        if (!$userId) return;
+        if (!$projectId) return;
 
-        $key = "dashboard_user_{$userId}";
+        $key = "dashboard_project_{$projectId}";
         
         Cache::forget($key);
 

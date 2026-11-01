@@ -3,12 +3,14 @@
 namespace App\Http\Requests;
 
 use App\Models\MasterPeriod;
+use App\Traits\HasProjectContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-
 class StoreUpdateIncomeRequest extends FormRequest
 {
+    use HasProjectContext;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -19,9 +21,15 @@ class StoreUpdateIncomeRequest extends FormRequest
 
     protected function prepareForValidation()
     {
-        $this->merge([
+        $mergeData = [
             'user_id' => auth()->id(),
-        ]);
+        ];
+
+        if (!$this->route('income')) {
+            $mergeData['project_id'] = $this->currentProjectId();
+        }
+
+        $this->merge($mergeData);
     }
 
     /**
@@ -31,19 +39,20 @@ class StoreUpdateIncomeRequest extends FormRequest
      */
     public function rules(): array
     {
+        $projectId = $this->currentProjectId();
 
         $rules = [
             'master_period_id' => [
                 'required',
-                Rule::exists('master_periods', 'id')->where(fn($q) => $q->where('user_id', auth()->id())->whereNull('deleted_at')),
+                Rule::exists('master_periods', 'id')->where(fn($q) => $q->where('project_id', $projectId)->whereNull('deleted_at')),
             ],
             'master_income_type_id' => [
                 'required',
-                Rule::exists('master_income_types', 'id')->where(fn($q) => $q->where('user_id', auth()->id())->whereNull('deleted_at')),
+                Rule::exists('master_income_types', 'id')->where(fn($q) => $q->where('project_id', $projectId)->whereNull('deleted_at')),
             ],
             'master_payment_id' => [
                 'required',
-                Rule::exists('master_payments', 'id')->where(fn($q) => $q->where('user_id', auth()->id())->whereNull('deleted_at')),
+                Rule::exists('master_payments', 'id')->where(fn($q) => $q->where('project_id', $projectId)->whereNull('deleted_at')),
             ],
             'title'  => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'min:0'],
@@ -61,9 +70,10 @@ class StoreUpdateIncomeRequest extends FormRequest
             }
         }
 
-        // Only require user_id on creation (POST), not on update (PATCH/PUT)
+        // Only require user_id and project_id on creation (POST), not on update (PATCH/PUT)
         if (!$this->route('income')) {
             $rules['user_id'] = ['required', 'exists:users,id'];
+            $rules['project_id'] = ['required', 'exists:projects,id'];
         }
 
         return $rules;

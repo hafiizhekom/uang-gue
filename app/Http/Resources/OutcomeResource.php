@@ -26,6 +26,7 @@ class OutcomeResource extends JsonResource
                         'id' => $this->category->id,
                         'name' => $this->category->name,
                         'slug' => $this->category->slug,
+                        'is_counted' => (bool) $this->category->is_counted,
                     ];
                 }
             ),

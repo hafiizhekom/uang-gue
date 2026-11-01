@@ -3,32 +3,38 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\IndexOutcomeDetailRequest;
 use App\Http\Requests\StoreUpdateOutcomeDetailRequest;
 use App\Http\Resources\OutcomeDetailResource;
 use App\Models\OutcomeDetail;
+use App\Traits\HasProjectContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 
 class OutcomeDetailController extends Controller
 {
+    use HasProjectContext;
+
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index(IndexOutcomeDetailRequest $request)
     {
-        //
-        $request->validate([
-            'outcome_id' => 'required|exists:outcomes,id',
-        ]);
+        $projectId = $this->currentProjectId();
+
         return OutcomeDetailResource::collection(
             OutcomeDetail::query()
-            ->where('outcome_id', $request->outcome_id)
-            ->whereHas('outcome', function($q) {
-                $q->where('user_id', auth()->id());
-            })
-            ->with(['payment', 'tags'])
-            ->latest('date')
-            ->get()
+                ->where('outcome_id', $request->outcome_id)
+                ->whereHas('outcome', function ($q) use ($projectId) {
+                    if ($projectId) {
+                        $q->where('project_id', $projectId);
+                    } else {
+                        $q->where('user_id', auth()->id());
+                    }
+                })
+                ->with(['payment', 'tags'])
+                ->latest('date')
+                ->get()
         );
     }
 
@@ -37,7 +43,6 @@ class OutcomeDetailController extends Controller
      */
     public function store(StoreUpdateOutcomeDetailRequest $request)
     {
-        //
         $data = $request->validated();
         $detail = OutcomeDetail::create(Arr::except($data, ['tags']));
 
@@ -57,7 +62,14 @@ class OutcomeDetailController extends Controller
      */
     public function show(OutcomeDetail $outcomeDetail)
     {
-        //
+        $projectId = $this->currentProjectId();
+        $outcome = $outcomeDetail->outcome;
+
+        if ($projectId ? !auth()->user()->belongsToProject($outcome->project_id) : $outcome->user_id !== auth()->id()) {
+            return $this->error('You do not have access to this outcome detail.', 403);
+        }
+
+        return $this->data(new OutcomeDetailResource($outcomeDetail->load(['payment', 'tags'])));
     }
 
     /**
@@ -65,15 +77,24 @@ class OutcomeDetailController extends Controller
      */
     public function update(StoreUpdateOutcomeDetailRequest $request, OutcomeDetail $outcomeDetail)
     {
-        //
+        $projectId = $this->currentProjectId();
+        $outcome = $outcomeDetail->outcome;
+
+        if ($projectId ? !auth()->user()->belongsToProject($outcome->project_id) : $outcome->user_id !== auth()->id()) {
+            return $this->error('You do not have access to this outcome detail.', 403);
+        }
+
         $data = $request->validated();
-        $detail = $outcomeDetail->update(Arr::except($data, ['tags']));
+        $outcomeDetail->update(Arr::except($data, ['tags']));
 
         if (isset($data['tags'])) {
             $outcomeDetail->tags()->sync($data['tags']);
         }
 
-        return $this->success(new OutcomeDetailResource($outcomeDetail->load(['payment', 'tags'])), 'Outcome detail updated successfully');
+        return $this->success(
+            new OutcomeDetailResource($outcomeDetail->load(['payment', 'tags'])),
+            'Outcome detail updated successfully'
+        );
     }
 
     /**
@@ -81,9 +102,16 @@ class OutcomeDetailController extends Controller
      */
     public function destroy(OutcomeDetail $outcomeDetail)
     {
-        //
+        $projectId = $this->currentProjectId();
+        $outcome = $outcomeDetail->outcome;
+
+        if ($projectId ? !auth()->user()->belongsToProject($outcome->project_id) : $outcome->user_id !== auth()->id()) {
+            return $this->error('You do not have access to this outcome detail.', 403);
+        }
+
         $outcomeDetail->tags()->detach();
         $outcomeDetail->delete();
+
         return $this->success(null, 'Outcome detail deleted successfully');
     }
 }

@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\MasterOutcomeDetailTag;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class MasterOutcomeDetailTagPolicy
 {
@@ -13,7 +12,7 @@ class MasterOutcomeDetailTagPolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -21,7 +20,7 @@ class MasterOutcomeDetailTagPolicy
      */
     public function view(User $user, MasterOutcomeDetailTag $masterOutcomeDetailTag): bool
     {
-        return $user->id === $masterOutcomeDetailTag->user_id;
+        return $masterOutcomeDetailTag->project_id ? $user->belongsToProject($masterOutcomeDetailTag->project_id) : $user->id === $masterOutcomeDetailTag->user_id;
     }
 
     /**
@@ -29,7 +28,7 @@ class MasterOutcomeDetailTagPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -37,7 +36,7 @@ class MasterOutcomeDetailTagPolicy
      */
     public function update(User $user, MasterOutcomeDetailTag $masterOutcomeDetailTag): bool
     {
-        return $user->id === $masterOutcomeDetailTag->user_id;
+        return $masterOutcomeDetailTag->project_id ? $user->belongsToProject($masterOutcomeDetailTag->project_id) : $user->id === $masterOutcomeDetailTag->user_id;
     }
 
     /**
@@ -45,7 +44,7 @@ class MasterOutcomeDetailTagPolicy
      */
     public function delete(User $user, MasterOutcomeDetailTag $masterOutcomeDetailTag): bool
     {
-        return $user->id === $masterOutcomeDetailTag->user_id;
+        return $masterOutcomeDetailTag->project_id ? $user->belongsToProject($masterOutcomeDetailTag->project_id) : $user->id === $masterOutcomeDetailTag->user_id;
     }
 
     /**
@@ -53,7 +52,7 @@ class MasterOutcomeDetailTagPolicy
      */
     public function restore(User $user, MasterOutcomeDetailTag $masterOutcomeDetailTag): bool
     {
-        return false;
+        return $masterOutcomeDetailTag->project_id ? $user->belongsToProject($masterOutcomeDetailTag->project_id) : $user->id === $masterOutcomeDetailTag->user_id;
     }
 
     /**
@@ -61,6 +60,6 @@ class MasterOutcomeDetailTagPolicy
      */
     public function forceDelete(User $user, MasterOutcomeDetailTag $masterOutcomeDetailTag): bool
     {
-        return false;
+        return $masterOutcomeDetailTag->project_id ? $user->belongsToProject($masterOutcomeDetailTag->project_id) : $user->id === $masterOutcomeDetailTag->user_id;
     }
 }

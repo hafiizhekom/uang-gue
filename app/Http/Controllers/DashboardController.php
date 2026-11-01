@@ -4,30 +4,36 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DashboardRequest;
+use App\Http\Resources\DashboardResource;
 use App\Models\Income;
 use App\Models\MasterPayment;
-use Illuminate\Support\Facades\Cache;
 use App\Models\Outcome;
-use App\Http\Resources\DashboardResource;
+use App\Traits\HasProjectContext;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
+    use HasProjectContext;
+
     public function index(DashboardRequest $request)
     {
+        $projectId = $this->currentProjectId();
         $userId = auth()->id();
         $period = $request->active_period;
 
-        // $cacheKey = "dashboard_user_{$userId}_period_{$period}";
-        $cacheKey = "dashboard_user_{$userId}";
-        $data = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($period, $userId) {
-            $last_period_balance = $period ? $this->last_period_balance($period, $userId) : [
+        $cacheKey = $projectId ? "dashboard_project_{$projectId}" : "dashboard_user_{$userId}";
+        $data = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($period, $projectId) {
+            $last_period_balance = $period ? $this->last_period_balance($period, $projectId) : [
+                'totalWalletAmount' => 0,
+                'openingBalance' => 0,
                 'monthlyIncome' => 0,
                 'monthlyOutcome' => 0,
                 'netSavings' => 0,
                 'status' => 'balance',
             ];
 
-            $last_period_chart = $period ? $this->last_period_chart($period, $userId) : [
+            $last_period_chart = $period ? $this->last_period_chart($period, $projectId) : [
                 'byCategory' => [],
                 'byType' => [],
                 'byTags' => [],
@@ -39,6 +45,7 @@ class DashboardController extends Controller
             return [
                 // Section Last Period Balance
                 'total_wallet_amount' => (float) ($last_period_balance['totalWalletAmount'] ?? 0),
+                'opening_balance'     => (float) ($last_period_balance['openingBalance'] ?? 0),
                 'monthly_income'      => $last_period_balance['monthlyIncome'],
                 'monthly_outcome'     => $last_period_balance['monthlyOutcome'],
                 'net_savings'         => $last_period_balance['netSavings'],
@@ -47,7 +54,7 @@ class DashboardController extends Controller
                 'period_range'        => $period ? "{$period->start_date} to {$period->end_date}" : null,
 
                 // Section Active Wallets
-                'active_wallets'      => $this->active_wallets($userId),
+                'active_wallets'      => $this->active_wallets($projectId),
 
                 // Section Last Period Chart Data
                 'by_category'         => $last_period_chart['byCategory'],
@@ -60,15 +67,20 @@ class DashboardController extends Controller
                 // Section Daily Trend (Line Chart)
                 'last_period_trend'   => $period ? $this->last_period_trend($period) : [],
             ];
-            
         });
-        
+
         return new DashboardResource($data);
     }
 
-    private function active_wallets($userId)
+    private function active_wallets($projectId)
     {
-        $activeWallets = MasterPayment::where('user_id', $userId)
+        return MasterPayment::where(function ($query) use ($projectId) {
+            if ($projectId) {
+                $query->where('project_id', $projectId);
+            } else {
+                $query->where('user_id', auth()->id());
+            }
+        })
         ->whereNull('deleted_at')
         ->orderByDesc('updated_at')
         ->limit(4)
@@ -79,17 +91,24 @@ class DashboardController extends Controller
                 'amount' => (float) $wallet->balance,
             ];
         });
-
-        return $activeWallets;
     }
 
-    private function last_period_balance($period, $userId)
+    private function last_period_balance($period, $projectId)
     {
-        $totalWalletAmount = MasterPayment::where('user_id', $userId)->sum('balance');
-        $monthlyIncome = $period ? (float) Income::where('master_period_id', $period->id)->sum('amount') : 0;
-        $monthlyOutcome = $period ? (float) Outcome::where('master_period_id', $period->id)->sum('amount') : 0;
+        $totalWalletAmount = MasterPayment::where(function ($query) use ($projectId) {
+            if ($projectId) {
+                $query->where('project_id', $projectId);
+            } else {
+                $query->where('user_id', auth()->id());
+            }
+        })->sum('balance');
 
-        $netSavings = $monthlyIncome - $monthlyOutcome;
+        $monthlyIncome = $period ? (float) Income::where('master_period_id', $period->id)->sum('amount') : 0;
+        $monthlyOutcome = $period ? (float) Outcome::counted()->where('master_period_id', $period->id)->sum('amount') : 0;
+        $openingBalance = (float) $period->opening_balance;
+
+        // netSavings = opening balance + income - outcome
+        $netSavings = $openingBalance + $monthlyIncome - $monthlyOutcome;
 
         $status = 'balance';
         if ($totalWalletAmount > $netSavings) {
@@ -98,41 +117,52 @@ class DashboardController extends Controller
             $status = 'under'; // Saldo di wallet lebih kecil dari catatan nabung
         }
 
-        return compact('totalWalletAmount', 'monthlyIncome', 'monthlyOutcome', 'netSavings', 'status');
+        return compact('totalWalletAmount', 'monthlyIncome', 'monthlyOutcome', 'netSavings', 'status', 'openingBalance');
     }
 
-    private function last_period_chart($period, $userId)
+    private function last_period_chart($period, $projectId)
     {
         $formatData = fn($collection) => $collection->map(fn($item) => [
             'name' => $item->name,
             'total' => (float) $item->total,
         ]);
-        
+
         // 1. Chart by Category
         $byCategory = Outcome::where('outcomes.master_period_id', $period->id)
             ->join('master_outcome_categories', 'outcomes.master_outcome_category_id', '=', 'master_outcome_categories.id')
-            ->whereNull('master_outcome_categories.deleted_at') // Filter kategori yang sudah dihapus
-            ->select('master_outcome_categories.name', \DB::raw('SUM(outcomes.amount) as total'))
+            ->where('master_outcome_categories.is_counted', true)
+            ->whereNull('master_outcome_categories.deleted_at')
+            ->select('master_outcome_categories.name', DB::raw('SUM(outcomes.amount) as total'))
             ->groupBy('master_outcome_categories.name')
             ->get();
 
         // 2. Chart by Type
         $byType = Outcome::where('outcomes.master_period_id', $period->id)
             ->join('master_outcome_types', 'outcomes.master_outcome_type_id', '=', 'master_outcome_types.id')
-            ->whereNull('master_outcome_types.deleted_at') // Filter tipe yang sudah dihapus
-            ->select('master_outcome_types.name', \DB::raw('SUM(outcomes.amount) as total'))
+            ->join('master_outcome_categories', 'outcomes.master_outcome_category_id', '=', 'master_outcome_categories.id')
+            ->where('master_outcome_categories.is_counted', true)
+            ->whereNull('master_outcome_types.deleted_at')
+            ->select('master_outcome_types.name', DB::raw('SUM(outcomes.amount) as total'))
             ->groupBy('master_outcome_types.name')
             ->get();
 
         // 3. Chart by Tags
-        $byTags = \DB::table('master_outcome_detail_tags')
+        $byTags = DB::table('master_outcome_detail_tags')
             ->join('outcome_detail_tag', 'master_outcome_detail_tags.id', '=', 'outcome_detail_tag.master_outcome_detail_tag_id')
             ->join('outcome_details', 'outcome_detail_tag.outcome_detail_id', '=', 'outcome_details.id')
             ->join('outcomes', 'outcome_details.outcome_id', '=', 'outcomes.id')
+            ->join('master_outcome_categories', 'outcomes.master_outcome_category_id', '=', 'master_outcome_categories.id')
             ->where('outcomes.master_period_id', $period->id)
-            ->where('master_outcome_detail_tags.user_id', $userId)
-            ->whereNull('master_outcome_detail_tags.deleted_at') // Filter tag yang sudah dihapus
-            ->select('master_outcome_detail_tags.name', \DB::raw('SUM(outcome_details.amount) as total'))
+            ->where('master_outcome_categories.is_counted', true)
+            ->where(function ($query) use ($projectId) {
+                if ($projectId) {
+                    $query->where('master_outcome_detail_tags.project_id', $projectId);
+                } else {
+                    $query->where('master_outcome_detail_tags.user_id', auth()->id());
+                }
+            })
+            ->whereNull('master_outcome_detail_tags.deleted_at')
+            ->select('master_outcome_detail_tags.name', DB::raw('SUM(outcome_details.amount) as total'))
             ->groupBy('master_outcome_detail_tags.name')
             ->get();
 
@@ -182,8 +212,8 @@ class DashboardController extends Controller
         // 5. Income by Type
         $incomeByType = Income::where('incomes.master_period_id', $period->id)
             ->join('master_income_types', 'incomes.master_income_type_id', '=', 'master_income_types.id')
-            ->whereNull('master_income_types.deleted_at') // Filter tipe income yang sudah dihapus
-            ->select('master_income_types.name', \DB::raw('SUM(incomes.amount) as total'))
+            ->whereNull('master_income_types.deleted_at')
+            ->select('master_income_types.name', DB::raw('SUM(incomes.amount) as total'))
             ->groupBy('master_income_types.name')
             ->get();
 
@@ -208,24 +238,27 @@ class DashboardController extends Controller
     private function last_period_trend($period)
     {
         $dailyIncome = Income::where('master_period_id', $period->id)
-            ->select(\DB::raw('DATE(date) as transaction_date'), \DB::raw('SUM(amount) as total'))
+            ->select(DB::raw('DATE(date) as transaction_date'), DB::raw('SUM(amount) as total'))
             ->groupBy('transaction_date')
             ->pluck('total', 'transaction_date');
 
-        $outcomeFromDetails = \DB::table('outcome_details')
+        $outcomeFromDetails = DB::table('outcome_details')
             ->join('outcomes', 'outcome_details.outcome_id', '=', 'outcomes.id')
+            ->join('master_outcome_categories', 'outcomes.master_outcome_category_id', '=', 'master_outcome_categories.id')
             ->where('outcomes.master_period_id', $period->id)
-            ->select(\DB::raw('DATE(outcome_details.date) as transaction_date'), \DB::raw('SUM(outcome_details.amount) as total'))
+            ->where('master_outcome_categories.is_counted', true)
+            ->select(DB::raw('DATE(outcome_details.date) as transaction_date'), DB::raw('SUM(outcome_details.amount) as total'))
             ->groupBy('transaction_date')
             ->pluck('total', 'transaction_date');
 
         $outcomeFromParentOnly = Outcome::where('master_period_id', $period->id)
+            ->counted()
             ->whereNotExists(function ($query) {
-                $query->select(\DB::raw(1))
+                $query->select(DB::raw(1))
                     ->from('outcome_details')
                     ->whereRaw('outcome_details.outcome_id = outcomes.id');
             })
-            ->select(\DB::raw('DATE(date) as transaction_date'), \DB::raw('SUM(amount) as total'))
+            ->select(DB::raw('DATE(date) as transaction_date'), DB::raw('SUM(amount) as total'))
             ->groupBy('transaction_date')
             ->pluck('total', 'transaction_date');
 
@@ -235,7 +268,7 @@ class DashboardController extends Controller
         $trendData = [];
         while ($startDate->lte($endDate)) {
             $dateStr = $startDate->toDateString();
-            
+
             $totalDailyOutcome = ($outcomeFromDetails[$dateStr] ?? 0) + ($outcomeFromParentOnly[$dateStr] ?? 0);
 
             $trendData[] = [
@@ -243,7 +276,7 @@ class DashboardController extends Controller
                 'income_total'  => (float) ($dailyIncome[$dateStr] ?? 0),
                 'outcome_total' => (float) $totalDailyOutcome,
             ];
-            
+
             $startDate->addDay();
         }
 

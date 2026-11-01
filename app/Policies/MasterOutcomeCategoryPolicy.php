@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\MasterOutcomeCategory;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class MasterOutcomeCategoryPolicy
 {
@@ -13,7 +12,7 @@ class MasterOutcomeCategoryPolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -21,7 +20,7 @@ class MasterOutcomeCategoryPolicy
      */
     public function view(User $user, MasterOutcomeCategory $masterOutcomeCategory): bool
     {
-        return $user->id === $masterOutcomeCategory->user_id;
+        return $masterOutcomeCategory->project_id ? $user->belongsToProject($masterOutcomeCategory->project_id) : $user->id === $masterOutcomeCategory->user_id;
     }
 
     /**
@@ -29,7 +28,7 @@ class MasterOutcomeCategoryPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -37,7 +36,7 @@ class MasterOutcomeCategoryPolicy
      */
     public function update(User $user, MasterOutcomeCategory $masterOutcomeCategory): bool
     {
-        return $user->id === $masterOutcomeCategory->user_id;
+        return $masterOutcomeCategory->project_id ? $user->belongsToProject($masterOutcomeCategory->project_id) : $user->id === $masterOutcomeCategory->user_id;
     }
 
     /**
@@ -45,7 +44,7 @@ class MasterOutcomeCategoryPolicy
      */
     public function delete(User $user, MasterOutcomeCategory $masterOutcomeCategory): bool
     {
-        return $user->id === $masterOutcomeCategory->user_id;
+        return $masterOutcomeCategory->project_id ? $user->belongsToProject($masterOutcomeCategory->project_id) : $user->id === $masterOutcomeCategory->user_id;
     }
 
     /**
@@ -53,7 +52,7 @@ class MasterOutcomeCategoryPolicy
      */
     public function restore(User $user, MasterOutcomeCategory $masterOutcomeCategory): bool
     {
-        return false;
+        return $masterOutcomeCategory->project_id ? $user->belongsToProject($masterOutcomeCategory->project_id) : $user->id === $masterOutcomeCategory->user_id;
     }
 
     /**
@@ -61,6 +60,6 @@ class MasterOutcomeCategoryPolicy
      */
     public function forceDelete(User $user, MasterOutcomeCategory $masterOutcomeCategory): bool
     {
-        return false;
+        return $masterOutcomeCategory->project_id ? $user->belongsToProject($masterOutcomeCategory->project_id) : $user->id === $masterOutcomeCategory->user_id;
     }
 }

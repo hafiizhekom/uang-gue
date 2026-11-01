@@ -3,11 +3,14 @@
 namespace App\Http\Requests;
 
 use App\Models\MasterPeriod;
+use App\Traits\HasProjectContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreUpdateOutcomeRequest extends FormRequest
 {
+    use HasProjectContext;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -18,9 +21,15 @@ class StoreUpdateOutcomeRequest extends FormRequest
 
     protected function prepareForValidation()
     {
-        $this->merge([
+        $mergeData = [
             'user_id' => auth()->id(),
-        ]);
+        ];
+
+        if (!$this->route('outcome')) {
+            $mergeData['project_id'] = $this->currentProjectId();
+        }
+
+        $this->merge($mergeData);
     }
 
     /**
@@ -30,32 +39,33 @@ class StoreUpdateOutcomeRequest extends FormRequest
      */
     public function rules(): array
     {
+        $projectId = $this->currentProjectId();
         $hasDetail = $this->route('outcome') ? $this->route('outcome')->has_detail : $this->boolean('has_detail');
 
         $rules = [
             'master_period_id' => [
                 'required',
                 Rule::exists('master_periods', 'id')->where(fn ($q) => 
-                    $q->where('user_id', auth()->id())->whereNull('deleted_at')
+                    $q->where('project_id', $projectId)->whereNull('deleted_at')
                 ),
             ],
             'master_outcome_category_id' => [
                 'required',
                 Rule::exists('master_outcome_categories', 'id')->where(fn ($q) => 
-                    $q->where('user_id', auth()->id())->whereNull('deleted_at')
+                    $q->where('project_id', $projectId)->whereNull('deleted_at')
                 ),
             ],
             'master_outcome_type_id' => [
                 'nullable',
                 Rule::exists('master_outcome_types', 'id')->where(fn ($q) => 
-                    $q->where('user_id', auth()->id())->whereNull('deleted_at')
+                    $q->where('project_id', $projectId)->whereNull('deleted_at')
                 ),
             ],
             'master_payment_id' => [
                 $hasDetail ? 'prohibited' : 'required',
                 'nullable',
                 Rule::exists('master_payments', 'id')->where(fn ($q) => 
-                    $q->where('user_id', auth()->id())->whereNull('deleted_at')
+                    $q->where('project_id', $projectId)->whereNull('deleted_at')
                 ),
             ],
             'title' => ['required', 'string', 'max:255'],
@@ -79,8 +89,9 @@ class StoreUpdateOutcomeRequest extends FormRequest
 
         if (!$this->route('outcome')) {
             $rules['user_id'] = ['required', 'exists:users,id'];
+            $rules['project_id'] = ['required', 'exists:projects,id'];
             $rules['has_detail'] = ['required', 'boolean'];
-        }else{
+        } else {
             $rules['has_detail'] = ['prohibited'];
         }
 

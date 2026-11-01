@@ -9,27 +9,30 @@ use Illuminate\Support\Facades\Log;
 class MasterOutcomeCategoryObserver
 {
     use ClearDashboardCache;
+
     /**
      * Handle the MasterOutcomeCategory "created" event.
      */
     public function created(MasterOutcomeCategory $masterOutcomeCategory): void
     {
-        //
         activity('master_outcome_category')
-        ->causedBy(auth()->user())
-        ->performedOn($masterOutcomeCategory)
-        ->withProperties([
-            'action' => 'Add Outcome Category',
-            'name'   => $masterOutcomeCategory->name,
-        ])
-        ->log('created');
+            ->causedBy(auth()->user())
+            ->performedOn($masterOutcomeCategory)
+            ->tap(fn($act) => $act->project_id = $masterOutcomeCategory->project_id)
+            ->withProperties([
+                'action' => 'Add Outcome Category',
+                'name'   => $masterOutcomeCategory->name,
+            ])
+            ->log('created');
         
         Log::channel('observer')->info("Data Created via Observer", [
-            'model'   => 'MasterOutcomeCategory',
-            'id'      => $masterOutcomeCategory->id,
-            'user_id' => auth()->id(),
+            'model'      => 'MasterOutcomeCategory',
+            'id'         => $masterOutcomeCategory->id,
+            'project_id' => $masterOutcomeCategory->project_id,
+            'user_id'    => auth()->id(),
         ]);
-        $this->refreshDashboard(auth()->id());
+
+        $this->refreshDashboard($masterOutcomeCategory->project_id);
     }
 
     /**
@@ -37,23 +40,25 @@ class MasterOutcomeCategoryObserver
      */
     public function updated(MasterOutcomeCategory $masterOutcomeCategory): void
     {
-        //
         activity('master_outcome_category')
-        ->causedBy(auth()->user())
-        ->performedOn($masterOutcomeCategory)
-        ->withProperties([
-            'action' => 'Update Outcome Category',
-            'before' => $masterOutcomeCategory->getOriginal(),
-            'after'  => $masterOutcomeCategory->getChanges(),
-        ])
-        ->log('updated');
+            ->causedBy(auth()->user())
+            ->performedOn($masterOutcomeCategory)
+            ->tap(fn($act) => $act->project_id = $masterOutcomeCategory->project_id)
+            ->withProperties([
+                'action' => 'Update Outcome Category',
+                'before' => $masterOutcomeCategory->getOriginal(),
+                'after'  => $masterOutcomeCategory->getChanges(),
+            ])
+            ->log('updated');
         
         Log::channel('observer')->info("Data Updated via Observer", [
-            'model'   => 'MasterOutcomeCategory',
-            'id'      => $masterOutcomeCategory->id,
-            'user_id' => auth()->id(),
+            'model'      => 'MasterOutcomeCategory',
+            'id'         => $masterOutcomeCategory->id,
+            'project_id' => $masterOutcomeCategory->project_id,
+            'user_id'    => auth()->id(),
         ]);
-        $this->refreshDashboard(auth()->id());
+
+        $this->refreshDashboard($masterOutcomeCategory->project_id);
     }
 
     /**
@@ -61,22 +66,24 @@ class MasterOutcomeCategoryObserver
      */
     public function deleted(MasterOutcomeCategory $masterOutcomeCategory): void
     {
-        //
         activity('master_outcome_category')
-        ->causedBy(auth()->user())
-        ->performedOn($masterOutcomeCategory)
-        ->withProperties([
-            'action' => 'Delete Outcome Category',
-            'name'   => $masterOutcomeCategory->name,
-        ])
-        ->log('deleted');
+            ->causedBy(auth()->user())
+            ->performedOn($masterOutcomeCategory)
+            ->tap(fn($act) => $act->project_id = $masterOutcomeCategory->project_id)
+            ->withProperties([
+                'action' => 'Delete Outcome Category',
+                'name'   => $masterOutcomeCategory->name,
+            ])
+            ->log('deleted');
         
         Log::channel('observer')->info("Data Deleted via Observer", [
-            'model'   => 'MasterOutcomeCategory',
-            'id'      => $masterOutcomeCategory->id,
-            'user_id' => auth()->id(),
+            'model'      => 'MasterOutcomeCategory',
+            'id'         => $masterOutcomeCategory->id,
+            'project_id' => $masterOutcomeCategory->project_id,
+            'user_id'    => auth()->id(),
         ]);
-        $this->refreshDashboard(auth()->id());
+
+        $this->refreshDashboard($masterOutcomeCategory->project_id);
     }
 
     /**
@@ -84,23 +91,24 @@ class MasterOutcomeCategoryObserver
      */
     public function restored(MasterOutcomeCategory $masterOutcomeCategory): void
     {
-        //
         activity('master_outcome_category')
-        ->causedBy(auth()->user())
-        ->performedOn($masterOutcomeCategory)
-        ->withProperties([
-            'action' => 'Restore Outcome Category',
-            'name'   => $masterOutcomeCategory->name,
-        ])
-        ->log('restored');
+            ->causedBy(auth()->user())
+            ->performedOn($masterOutcomeCategory)
+            ->tap(fn($act) => $act->project_id = $masterOutcomeCategory->project_id)
+            ->withProperties([
+                'action' => 'Restore Outcome Category',
+                'name'   => $masterOutcomeCategory->name,
+            ])
+            ->log('restored');
         
         Log::channel('observer')->info("Data Restored via Observer", [
-            'model'   => 'MasterOutcomeCategory',
-            'id'      => $masterOutcomeCategory->id,
-            'user_id' => auth()->id(),
+            'model'      => 'MasterOutcomeCategory',
+            'id'         => $masterOutcomeCategory->id,
+            'project_id' => $masterOutcomeCategory->project_id,
+            'user_id'    => auth()->id(),
         ]);
 
-        $this->refreshDashboard(auth()->id());
+        $this->refreshDashboard($masterOutcomeCategory->project_id);
     }
 
     /**
@@ -108,22 +116,23 @@ class MasterOutcomeCategoryObserver
      */
     public function forceDeleted(MasterOutcomeCategory $masterOutcomeCategory): void
     {
-        //
         activity('master_outcome_category')
-        ->causedBy(auth()->user())
-        ->performedOn($masterOutcomeCategory)
-        ->withProperties([
-            'action' => 'Permanently Deleted Outcome Category',
-            'name'   => $masterOutcomeCategory->name,
-        ])
-        ->log('force_deleted');
+            ->causedBy(auth()->user())
+            ->performedOn($masterOutcomeCategory)
+            ->tap(fn($act) => $act->project_id = $masterOutcomeCategory->project_id)
+            ->withProperties([
+                'action' => 'Permanently Deleted Outcome Category',
+                'name'   => $masterOutcomeCategory->name,
+            ])
+            ->log('force_deleted');
         
         Log::channel('observer')->info("Data Force Deleted via Observer", [
-            'model'   => 'MasterOutcomeCategory',
-            'id'      => $masterOutcomeCategory->id,
-            'user_id' => auth()->id(),
+            'model'      => 'MasterOutcomeCategory',
+            'id'         => $masterOutcomeCategory->id,
+            'project_id' => $masterOutcomeCategory->project_id,
+            'user_id'    => auth()->id(),
         ]);
 
-        $this->refreshDashboard(auth()->id());
+        $this->refreshDashboard($masterOutcomeCategory->project_id);
     }
 }
